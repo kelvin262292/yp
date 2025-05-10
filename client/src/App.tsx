@@ -7,6 +7,18 @@ import ProductDetail from "@/pages/ProductDetail";
 import Cart from "@/pages/Cart";
 import Account from "@/pages/Account";
 
+// Info pages
+import AboutPage from "@/pages/info/AboutPage";
+import CareersPage from "@/pages/info/CareersPage";
+import TermsPage from "@/pages/info/TermsPage";
+import PrivacyPage from "@/pages/info/PrivacyPage";
+import SellerPage from "@/pages/info/SellerPage";
+import HelpPage from "@/pages/info/HelpPage";
+import ContactPage from "@/pages/info/ContactPage";
+import ReturnPolicyPage from "@/pages/info/ReturnPolicyPage";
+import ReportPage from "@/pages/info/ReportPage";
+import FAQPage from "@/pages/info/FAQPage";
+
 // Admin pages
 import AdminDashboard from "@/pages/admin/AdminDashboard";
 import ProductList from "@/pages/admin/products/ProductList";
@@ -28,6 +40,18 @@ function App() {
           <Route path="/product/:slug" component={ProductDetail} />
           <Route path="/cart" component={Cart} />
           <Route path="/account" component={Account} />
+          
+          {/* Info Pages */}
+          <Route path="/about" component={AboutPage} />
+          <Route path="/careers" component={CareersPage} />
+          <Route path="/terms" component={TermsPage} />
+          <Route path="/privacy" component={PrivacyPage} />
+          <Route path="/seller" component={SellerPage} />
+          <Route path="/help" component={HelpPage} />
+          <Route path="/contact" component={ContactPage} />
+          <Route path="/return-policy" component={ReturnPolicyPage} />
+          <Route path="/report" component={ReportPage} />
+          <Route path="/faq" component={FAQPage} />
           
           {/* Admin Routes */}
           <Route path="/admin" component={AdminDashboard} />
