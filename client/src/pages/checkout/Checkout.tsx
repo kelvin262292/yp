@@ -87,7 +87,11 @@ const Checkout = () => {
   // Tính tổng tiền giỏ hàng
   const calculateTotal = () => {
     return cartItems.reduce((sum, item) => {
-      return sum + (item.product.salePrice || item.product.price) * item.quantity;
+      // Sử dụng giá có chiết khấu nếu có, nếu không thì dùng giá gốc
+      const price = item.product.discountPercentage && item.product.originalPrice 
+        ? item.product.price // Đã là giá giảm
+        : item.product.price; // Giá thường
+      return sum + price * item.quantity;
     }, 0);
   };
   
