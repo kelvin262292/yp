@@ -517,8 +517,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       // Tạo payment intent với Stripe
       const paymentIntent = await stripe.paymentIntents.create({
-        amount: Math.round(amount), // Chú ý: Stripe sử dụng "cents" cho USD nhưng chúng ta đã chuyển sang VND
+        amount: Math.round(amount), // VND không có phần thập phân nên không cần nhân với 100
         currency: "vnd",
+        payment_method_types: ['card'],
         automatic_payment_methods: {
           enabled: true,
         },
