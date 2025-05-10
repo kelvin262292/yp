@@ -259,7 +259,7 @@ const CategoryForm = () => {
                           </SelectTrigger>
                         </FormControl>
                         <SelectContent>
-                          <SelectItem value="">Không có danh mục cha</SelectItem>
+                          <SelectItem value="none">Không có danh mục cha</SelectItem>
                           {categoriesData && categoriesData.length > 0 ? (
                             categoriesData.map((category: any) => (
                               <SelectItem key={category.id} value={category.id.toString()}>

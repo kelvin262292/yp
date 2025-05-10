@@ -65,15 +65,15 @@ const MenuItem: React.FC<MenuItemProps> = ({
         </div>
       ) : (
         <Link href={path}>
-          <a 
+          <div 
             className={cn(
-              'flex items-center py-2 px-4 rounded-md transition-colors',
+              'flex items-center py-2 px-4 rounded-md transition-colors cursor-pointer',
               selected ? 'bg-primary/10 text-primary font-medium' : 'hover:bg-slate-100'
             )}
           >
             <span className="mr-3">{icon}</span>
             <span>{title}</span>
-          </a>
+          </div>
         </Link>
       )}
       
@@ -81,14 +81,14 @@ const MenuItem: React.FC<MenuItemProps> = ({
         <div className="ml-12 mt-1 space-y-1">
           {subItems.map((subItem, index) => (
             <Link key={index} href={subItem.path}>
-              <a 
+              <div 
                 className={cn(
-                  'block py-1.5 px-4 rounded-md text-sm transition-colors',
+                  'block py-1.5 px-4 rounded-md text-sm transition-colors cursor-pointer',
                   location === subItem.path ? 'text-primary font-medium' : 'hover:bg-slate-100'
                 )}
               >
                 {subItem.title}
-              </a>
+              </div>
             </Link>
           ))}
         </div>
@@ -122,10 +122,10 @@ const Sidebar = () => {
     <div className="w-64 bg-white border-r h-full flex flex-col">
       <div className="p-4 border-b">
         <Link href="/">
-          <a className="flex items-center">
+          <div className="flex items-center cursor-pointer">
             <div className="w-8 h-8 bg-primary rounded-md flex items-center justify-center text-white font-bold mr-2">Y</div>
             <div className="font-bold text-xl">Yapee Admin</div>
-          </a>
+          </div>
         </Link>
       </div>
       

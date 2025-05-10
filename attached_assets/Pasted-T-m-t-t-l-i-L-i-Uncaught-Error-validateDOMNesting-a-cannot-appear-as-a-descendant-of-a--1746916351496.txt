@@ -1,0 +1,68 @@
+Tóm tắt lỗi:
+
+Lỗi “Uncaught Error: validateDOMNesting(…): <a> cannot appear as a descendant of <a>” xảy ra trong ứng dụng React của bạn vì bạn đã lồng một thẻ <a> (thẻ liên kết HTML) vào bên trong một thẻ <a> khác. Đây là một cấu trúc HTML không hợp lệ theo tiêu chuẩn web. React phát hiện và cảnh báo lỗi này để đảm bảo mã nguồn của bạn tuân thủ chuẩn và tránh các hành vi không mong muốn trên trình duyệt.
+
+Nguyên nhân phổ biến:
+
+Lồng trực tiếp: Vô tình đặt một thẻ <a> trong JSX của một thẻ <a> khác.
+Component lồng nhau: Sử dụng các component React (tự tạo hoặc từ thư viện) mà cả component cha và component con đều render ra thẻ <a>.
+Hướng giải quyết chính:
+
+Xác định vị trí lỗi:
+
+Kiểm tra Console Log: “Stack trace” (dấu vết ngăn xếp) trong console của trình duyệt sẽ chỉ ra chuỗi các component React gây ra lỗi.
+Sử dụng Developer Tools: Dùng công cụ “Inspect Element” để xem cấu trúc HTML được render và tìm các thẻ <a> bị lồng.
+Điều chỉnh cấu trúc HTML/JSX:
+
+Thay thế thẻ không cần thiết: Nếu một trong hai thẻ <a> không thực sự cần là một liên kết (ví dụ: chỉ dùng để tạo kiểu hoặc xử lý sự kiện không phải điều hướng), hãy thay thế nó bằng một thẻ ngữ nghĩa khác như <span>, <div>, hoặc <button>. Bạn có thể dùng CSS để tạo kiểu cho giống thẻ <a> nếu cần.
+Tách rời các liên kết: Nếu cả hai phần tử đều cần là liên kết độc lập, hãy cấu trúc lại JSX để chúng không lồng vào nhau (ví dụ: đặt chúng làm anh em - siblings - thay vì cha-con).
+Sử dụng Props của thư viện UI (nếu có):
+
+Khi làm việc với các thư viện component (như React Bootstrap, Material-UI, Ant Design, shadcn/ui, v.v.), một số component có thể mặc định render ra thẻ <a>. Nếu bạn lồng một component Link (từ React Router hoặc Next.js) vào bên trong, lỗi này có thể xảy ra.
+Sử dụng as prop: Nhiều thư viện cung cấp prop as (hoặc component) để bạn chỉ định thẻ HTML gốc mà component đó sẽ render. Ví dụ: <Button as={Link} to="/path">... hoặc <Nav.Link as={Link} to="/path">....
+Sử dụng asChild prop: Một số thư viện hiện đại (thường dựa trên Radix UI như shadcn/ui) có prop asChild. Khi đặt asChild={true}, component cha sẽ không render thẻ HTML của riêng nó mà sẽ “truyền” các thuộc tính và hành vi của nó cho component con trực tiếp duy nhất. Ví dụ: <Button asChild><Link href="/path">Click me</Link></Button>. Điều này cho phép component Link bên trong đảm nhận việc render thẻ <a>.
+Kiểm tra và điều chỉnh Component tự tạo:
+
+Nếu lỗi xuất phát từ các component bạn tự viết, hãy xem xét logic render của chúng.
+Đảm bảo rằng khi các component này được lồng vào nhau, chúng không vô tình tạo ra cấu trúc <a> lồng <a>. Có thể cần điều chỉnh một component để nó render một thẻ khác (ví dụ: <div>) hoặc truyền props để kiểm soát việc render thẻ <a>.
+Tóm lại, quy trình sửa lỗi bao gồm:
+
+Tìm chính xác nơi thẻ <a> bị lồng.
+Quyết định mục đích của từng thẻ <a>.
+Sửa đổi JSX bằng cách thay đổi loại thẻ, tách rời liên kết, hoặc sử dụng các props đặc biệt của thư viện UI để đảm bảo cấu trúc HTML hợp lệ.
+
+Vào danh mục sản phẩm không có hiển thị 404 Page not found . Nếu không có sản phẩm hiển thị không có sản phẩm.
+Trang admin : Thêm hoặc xoá sản phẩm không được .
+Trang admin : vào Thêm danh mục; Thêm sản phẩm 
+Lỗi này xảy ra do thành phần <Select.Item /> đang được sử dụng không có thuộc tính value hoặc thuộc tính value của nó là một chuỗi rỗng.
+
+Nguyên nhân gây lỗi:
+
+Trong thư viện component mà bạn đang sử dụng (có vẻ là một thư viện dựa trên Radix UI, dựa vào radix-ui react-select trong stack trace), mỗi <Select.Item /> phải có một thuộc tính value không được để trống. Điều này là do giá trị value của Select có thể được đặt thành một chuỗi rỗng để xóa lựa chọn hiện tại và hiển thị placeholder. Nếu một <Select.Item /> cũng có giá trị rỗng, sẽ không có cách nào để phân biệt giữa việc "chưa chọn gì" và "chọn một mục có giá trị rỗng".
+
+Hướng giải quyết:
+
+Để khắc phục lỗi này, bạn cần đảm bảo rằng mọi thành phần <Select.Item /> trong mã của bạn đều có một thuộc tính value được gán một giá trị chuỗi không rỗng.
+
+Ví dụ, nếu bạn có mã tương tự như sau:
+
+Mã gây lỗi:
+
+<Select.Item value="">Lựa chọn A</Select.Item>
+// hoặc
+<Select.Item>Lựa chọn B</Select.Item>
+
+
+Mã đã sửa:
+
+<Select.Item value="lua-chon-a">Lựa chọn A</Select.Item>
+<Select.Item value="lua-chon-b">Lựa chọn B</Select.Item>
+IGNORE_WHEN_COPYING_START
+content_copy
+download
+Use code with caution.
+JavaScript
+IGNORE_WHEN_COPYING_END
+
+Trang admin : Vận chuyển; thanh toán; báo cáo; Người dùng; Cài đặt - Lỗi 404 page not found 
+Yêu cầu: Tự động sửa đổi code liên quan và thực thi các lệnh tương ứng.
