@@ -1,6 +1,7 @@
 import { pgTable, text, serial, integer, boolean, timestamp, real, jsonb } from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
+import { relations } from "drizzle-orm";
 
 // User schema
 export const users = pgTable("users", {
@@ -25,6 +26,14 @@ export const categories = pgTable("categories", {
   parentId: integer("parent_id").references(() => categories.id),
 });
 
+// Brand schema
+export const brands = pgTable("brands", {
+  id: serial("id").primaryKey(),
+  name: text("name").notNull(),
+  logoUrl: text("logo_url"),
+  isFeatured: boolean("is_featured").default(false),
+});
+
 // Product schema
 export const products = pgTable("products", {
   id: serial("id").primaryKey(),
@@ -40,6 +49,7 @@ export const products = pgTable("products", {
   discountPercentage: integer("discount_percentage"),
   imageUrl: text("image_url").notNull(),
   categoryId: integer("category_id").references(() => categories.id),
+  brandId: integer("brand_id").references(() => brands.id),
   rating: real("rating").default(0),
   reviewCount: integer("review_count").default(0),
   stock: integer("stock").default(0),
@@ -67,14 +77,6 @@ export const cartItems = pgTable("cart_items", {
   quantity: integer("quantity").notNull().default(1),
 });
 
-// Brand schema
-export const brands = pgTable("brands", {
-  id: serial("id").primaryKey(),
-  name: text("name").notNull(),
-  logoUrl: text("logo_url"),
-  isFeatured: boolean("is_featured").default(false),
-});
-
 // Flash deal schema
 export const flashDeals = pgTable("flash_deals", {
   id: serial("id").primaryKey(),
@@ -99,6 +101,66 @@ export const banners = pgTable("banners", {
   isActive: boolean("is_active").default(true),
   position: integer("position").default(0),
 });
+
+// Relationship definitions
+export const usersRelations = relations(users, ({ many }) => ({
+  carts: many(carts),
+}));
+
+export const categoriesRelations = relations(categories, ({ many, one }) => ({
+  products: many(products),
+  parentCategory: one(categories, {
+    fields: [categories.parentId],
+    references: [categories.id],
+    relationName: "parentChild",
+  }),
+  childCategories: many(categories, {
+    relationName: "parentChild",
+  }),
+}));
+
+export const brandsRelations = relations(brands, ({ many }) => ({
+  products: many(products),
+}));
+
+export const productsRelations = relations(products, ({ one, many }) => ({
+  category: one(categories, {
+    fields: [products.categoryId],
+    references: [categories.id],
+  }),
+  brand: one(brands, {
+    fields: [products.brandId],
+    references: [brands.id],
+  }),
+  cartItems: many(cartItems),
+  flashDeals: many(flashDeals),
+}));
+
+export const cartsRelations = relations(carts, ({ one, many }) => ({
+  user: one(users, {
+    fields: [carts.userId],
+    references: [users.id],
+  }),
+  items: many(cartItems),
+}));
+
+export const cartItemsRelations = relations(cartItems, ({ one }) => ({
+  cart: one(carts, {
+    fields: [cartItems.cartId],
+    references: [carts.id],
+  }),
+  product: one(products, {
+    fields: [cartItems.productId],
+    references: [products.id],
+  }),
+}));
+
+export const flashDealsRelations = relations(flashDeals, ({ one }) => ({
+  product: one(products, {
+    fields: [flashDeals.productId],
+    references: [products.id],
+  }),
+}));
 
 // Zod schemas
 export const insertUserSchema = createInsertSchema(users).pick({
