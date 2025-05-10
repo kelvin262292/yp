@@ -3,13 +3,7 @@ import { LanguageContext } from "@/context/LanguageContext";
 import { TranslationKey } from "@/lib/i18n";
 
 export const useLanguage = () => {
-  const context = useContext(LanguageContext);
-  
-  if (!context) {
-    throw new Error("useLanguage must be used within a LanguageProvider");
-  }
-  
-  const { language, setLanguage, translations } = context;
+  const { language, setLanguage, translations } = useContext(LanguageContext);
   
   // Translation function
   const t = (key: TranslationKey): string => {
