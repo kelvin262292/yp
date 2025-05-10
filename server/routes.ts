@@ -513,14 +513,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ message: "Số tiền không hợp lệ" });
       }
       
+      console.log("Đang tạo payment intent với số tiền:", amount);
+      
       // Tạo payment intent với Stripe
       const paymentIntent = await stripe.paymentIntents.create({
-        amount: Math.round(amount), // Số tiền đã là VND nên không cần nhân với 100
+        amount: Math.round(amount), // Chú ý: Stripe sử dụng "cents" cho USD nhưng chúng ta đã chuyển sang VND
         currency: "vnd",
         automatic_payment_methods: {
           enabled: true,
         },
       });
+      
+      console.log("Đã tạo payment intent thành công:", paymentIntent.id);
       
       // Trả về client secret
       res.json({
