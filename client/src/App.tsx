@@ -24,6 +24,9 @@ import AdminDashboard from "@/pages/admin/AdminDashboard";
 import ProductList from "@/pages/admin/products/ProductList";
 import ProductForm from "@/pages/admin/products/ProductForm";
 import CategoryList from "@/pages/admin/categories/CategoryList";
+import CategoryForm from "@/pages/admin/categories/CategoryForm";
+import BrandList from "@/pages/admin/brands/BrandList";
+import BrandForm from "@/pages/admin/brands/BrandForm";
 import OrderList from "@/pages/admin/orders/OrderList";
 
 function App() {
@@ -59,6 +62,11 @@ function App() {
           <Route path="/admin/products/new" component={ProductForm} />
           <Route path="/admin/products/:id/edit" component={ProductForm} />
           <Route path="/admin/categories" component={CategoryList} />
+          <Route path="/admin/categories/new" component={CategoryForm} />
+          <Route path="/admin/categories/:id/edit" component={CategoryForm} />
+          <Route path="/admin/brands" component={BrandList} />
+          <Route path="/admin/brands/new" component={BrandForm} />
+          <Route path="/admin/brands/:id/edit" component={BrandForm} />
           <Route path="/admin/orders" component={OrderList} />
           <Route path="/admin/orders/pending" component={OrderList} />
           <Route path="/admin/orders/processing" component={OrderList} />
