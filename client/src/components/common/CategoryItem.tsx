@@ -33,12 +33,12 @@ const CategoryItem = ({ category, language }: CategoryItemProps) => {
 
   return (
     <Link href={`/category/${category.slug}`}>
-      <a className="flex flex-col items-center p-4 bg-white rounded-lg hover:shadow-md transition">
+      <div className="flex flex-col items-center p-4 bg-white rounded-lg hover:shadow-md transition cursor-pointer">
         <div className="w-16 h-16 bg-light rounded-full flex items-center justify-center text-primary mb-3">
           <i className={`${getIconClass()} text-2xl`}></i>
         </div>
         <span className="text-center text-sm font-medium">{categoryName}</span>
-      </a>
+      </div>
     </Link>
   );
 };
