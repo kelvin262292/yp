@@ -675,7 +675,7 @@ export const translations = {
 };
 
 export type Language = 'vi' | 'en' | 'zh';
-export type TranslationKey = keyof typeof translations.vi | keyof typeof translations.en | keyof typeof translations.zh;
+export type TranslationKey = keyof typeof translations.vi | keyof typeof translations.en | keyof typeof translations.zh | 'contact-details' | 'all-rights-reserved' | 'admin.total' | 'admin.description';
 
 export const formatPrice = (price: number, language: Language): string => {
   if (language === 'vi') {
