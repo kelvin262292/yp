@@ -70,23 +70,7 @@ import {
 } from "@/components/ui/tooltip";
 import { Badge } from "@/components/ui/badge";
 
-// Sample data for form select options
-const categories = [
-  { id: 1, name: 'Điện thoại', nameEn: 'Phones', nameZh: '手机' },
-  { id: 2, name: 'Điện tử', nameEn: 'Electronics', nameZh: '电子产品' },
-  { id: 3, name: 'Thời trang', nameEn: 'Fashion', nameZh: '时尚' },
-  { id: 4, name: 'Làm đẹp', nameEn: 'Beauty', nameZh: '美妆' },
-  { id: 5, name: 'Đồ gia dụng', nameEn: 'Home', nameZh: '家居' },
-];
-
-const brands = [
-  { id: 1, name: 'Apple' },
-  { id: 2, name: 'Samsung' },
-  { id: 3, name: 'Adidas' },
-  { id: 4, name: 'Nike' },
-  { id: 5, name: "L'Oreal" },
-  { id: 6, name: 'Xiaomi' },
-];
+// Categories and brands will be fetched from the API
 
 // Form validation schema
 const productFormSchema = z.object({
@@ -717,11 +701,19 @@ const ProductForm = () => {
                               </SelectTrigger>
                             </FormControl>
                             <SelectContent>
-                              {categories.map((category) => (
-                                <SelectItem key={category.id} value={category.id.toString()}>
-                                  {category.name}
+                              {categoriesData && categoriesData.length > 0 ? (
+                                categoriesData.map((category: any) => (
+                                  <SelectItem key={category.id} value={category.id.toString()}>
+                                    {language === 'vi' ? category.name : 
+                                     language === 'en' ? category.nameEn : 
+                                     category.nameZh}
+                                  </SelectItem>
+                                ))
+                              ) : (
+                                <SelectItem value="" disabled>
+                                  {t('admin.noCategories')}
                                 </SelectItem>
-                              ))}
+                              )}
                             </SelectContent>
                           </Select>
                           <FormMessage />
