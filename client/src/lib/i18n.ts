@@ -675,7 +675,13 @@ export const translations = {
 };
 
 export type Language = 'vi' | 'en' | 'zh';
-export type TranslationKey = keyof typeof translations.vi | keyof typeof translations.en | keyof typeof translations.zh | 'contact-details' | 'all-rights-reserved' | 'admin.total' | 'admin.description';
+export type TranslationKey = keyof typeof translations.vi | keyof typeof translations.en | keyof typeof translations.zh | 
+  // Added new keys
+  'contact-details' | 'all-rights-reserved' | 'admin.total' | 'admin.description' |
+  'admin.category' | 'admin.brand' | 'admin.selectCategory' | 'admin.selectBrand' | 
+  'admin.noCategories' | 'admin.noBrands' | 'admin.originalPrice' | 
+  'admin.originalPriceDescription' | 'admin.stock' | 'admin.productVariants' | 
+  'admin.productVariantsDescription';
 
 export const formatPrice = (price: number, language: Language): string => {
   if (language === 'vi') {

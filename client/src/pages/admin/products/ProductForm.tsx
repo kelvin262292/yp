@@ -307,7 +307,7 @@ const VariantRow: React.FC<VariantRowProps> = ({
 
 const ProductForm = () => {
   const [location, navigate] = useLocation();
-  const { t } = useLanguage();
+  const { t, language } = useLanguage();
   const isEditMode = location.includes('/edit');
   const productId = isEditMode ? parseInt(location.split('/').pop() || '0') : 0;
   
@@ -737,11 +737,17 @@ const ProductForm = () => {
                               </SelectTrigger>
                             </FormControl>
                             <SelectContent>
-                              {brands.map((brand) => (
-                                <SelectItem key={brand.id} value={brand.id.toString()}>
-                                  {brand.name}
+                              {brandsData && brandsData.length > 0 ? (
+                                brandsData.map((brand: any) => (
+                                  <SelectItem key={brand.id} value={brand.id.toString()}>
+                                    {brand.name}
+                                  </SelectItem>
+                                ))
+                              ) : (
+                                <SelectItem value="" disabled>
+                                  {t('admin.noBrands')}
                                 </SelectItem>
-                              ))}
+                              )}
                             </SelectContent>
                           </Select>
                           <FormMessage />
