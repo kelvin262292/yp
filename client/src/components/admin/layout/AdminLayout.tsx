@@ -64,8 +64,8 @@ interface SideNavGroupProps {
 const SideNavItem: React.FC<SideNavItemProps> = ({ icon, label, href, active, end = false }) => {
   return (
     <Link href={href}>
-      <a className={`
-        flex items-center gap-3 px-3 py-2 rounded-md text-sm transition-colors
+      <div className={`
+        flex items-center gap-3 px-3 py-2 rounded-md text-sm transition-colors cursor-pointer
         ${active 
           ? 'bg-primary text-primary-foreground font-medium' 
           : 'text-gray-700 hover:bg-gray-100'}
@@ -73,7 +73,7 @@ const SideNavItem: React.FC<SideNavItemProps> = ({ icon, label, href, active, en
       `}>
         {icon}
         <span>{label}</span>
-      </a>
+      </div>
     </Link>
   );
 };
@@ -164,37 +164,37 @@ const AdminLayout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
           defaultOpen={isActive('/admin/products')}
         >
           <Link href="/admin/products">
-            <a className={`
-              flex items-center gap-3 px-3 py-2 rounded-md text-sm transition-colors
+            <div className={`
+              flex items-center gap-3 px-3 py-2 rounded-md text-sm transition-colors cursor-pointer
               ${isActive('/admin/products') && !location.includes('/new') && !location.includes('/edit')
                 ? 'bg-primary/10 text-primary font-medium' 
                 : 'text-gray-700 hover:bg-gray-100'}
             `}>
               <ChevronRight size={16} />
               <span>{t('admin.allProducts')}</span>
-            </a>
+            </div>
           </Link>
           <Link href="/admin/products/yapee-mall">
-            <a className={`
-              flex items-center gap-3 px-3 py-2 rounded-md text-sm transition-colors
+            <div className={`
+              flex items-center gap-3 px-3 py-2 rounded-md text-sm transition-colors cursor-pointer
               ${location.includes('/admin/products/yapee-mall')
                 ? 'bg-primary/10 text-primary font-medium' 
                 : 'text-gray-700 hover:bg-gray-100'}
             `}>
               <ChevronRight size={16} />
               <span>{t('admin.yapeeProducts')}</span>
-            </a>
+            </div>
           </Link>
           <Link href="/admin/products/new">
-            <a className={`
-              flex items-center gap-3 px-3 py-2 rounded-md text-sm transition-colors
+            <div className={`
+              flex items-center gap-3 px-3 py-2 rounded-md text-sm transition-colors cursor-pointer
               ${location === '/admin/products/new'
                 ? 'bg-primary/10 text-primary font-medium' 
                 : 'text-gray-700 hover:bg-gray-100'}
             `}>
               <ChevronRight size={16} />
               <span>{t('admin.addProduct')}</span>
-            </a>
+            </div>
           </Link>
         </SideNavGroup>
         
@@ -218,26 +218,26 @@ const AdminLayout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
           defaultOpen={isActive('/admin/orders')}
         >
           <Link href="/admin/orders">
-            <a className={`
-              flex items-center gap-3 px-3 py-2 rounded-md text-sm transition-colors
+            <div className={`
+              flex items-center gap-3 px-3 py-2 rounded-md text-sm transition-colors cursor-pointer
               ${isActive('/admin/orders') && !location.includes('/pending') && !location.includes('/processing') && !location.includes('/shipping') && !location.includes('/delivered') && !location.includes('/cancelled')
                 ? 'bg-primary/10 text-primary font-medium' 
                 : 'text-gray-700 hover:bg-gray-100'}
             `}>
               <ChevronRight size={16} />
               <span>{t('admin.allOrders')}</span>
-            </a>
+            </div>
           </Link>
           <Link href="/admin/orders/pending">
-            <a className={`
-              flex items-center gap-3 px-3 py-2 rounded-md text-sm transition-colors
+            <div className={`
+              flex items-center gap-3 px-3 py-2 rounded-md text-sm transition-colors cursor-pointer
               ${location.includes('/admin/orders/pending')
                 ? 'bg-primary/10 text-primary font-medium' 
                 : 'text-gray-700 hover:bg-gray-100'}
             `}>
               <ChevronRight size={16} />
               <span>{t('admin.pendingOrders')}</span>
-            </a>
+            </div>
           </Link>
           <Link href="/admin/orders/processing">
             <a className={`
