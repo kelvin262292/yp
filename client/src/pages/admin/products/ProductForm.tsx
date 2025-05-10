@@ -401,15 +401,94 @@ const ProductForm = () => {
       .replace(/^-+|-+$/g, '');
   };
   
+  // Get query client for cache invalidation
+  const queryClient = useQueryClient();
+  const { toast } = useToast();
+  
+  // Get categories data for dropdown
+  const { data: categoriesData } = useQuery({
+    queryKey: ['/api/categories'],
+    staleTime: 60000, // 1 minute
+  });
+  
+  // Get brands data for dropdown
+  const { data: brandsData } = useQuery({
+    queryKey: ['/api/brands'],
+    staleTime: 60000, // 1 minute
+  });
+  
+  // Add product mutation
+  const createProductMutation = useMutation({
+    mutationFn: (productData: any) => {
+      return apiRequest('/api/admin/products', {
+        method: 'POST',
+        data: productData,
+      });
+    },
+    onSuccess: () => {
+      // Invalidate products cache
+      queryClient.invalidateQueries({ queryKey: ['/api/products'] });
+      toast({
+        title: "Thành công",
+        description: "Sản phẩm đã được tạo thành công",
+      });
+      navigate('/admin/products');
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Lỗi",
+        description: error.message || "Không thể tạo sản phẩm. Vui lòng thử lại.",
+        variant: "destructive",
+      });
+    }
+  });
+  
+  // Update product mutation
+  const updateProductMutation = useMutation({
+    mutationFn: (data: { id: number; productData: any }) => {
+      return apiRequest(`/api/admin/products/${data.id}`, {
+        method: 'PUT',
+        data: data.productData,
+      });
+    },
+    onSuccess: () => {
+      // Invalidate products cache
+      queryClient.invalidateQueries({ queryKey: ['/api/products'] });
+      toast({
+        title: "Thành công",
+        description: "Sản phẩm đã được cập nhật thành công",
+      });
+      navigate('/admin/products');
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Lỗi",
+        description: error.message || "Không thể cập nhật sản phẩm. Vui lòng thử lại.",
+        variant: "destructive",
+      });
+    }
+  });
+  
   const onSubmit = (values: ProductFormValues) => {
-    // Here we would call API to create/update the product
-    console.log('Form values:', values);
-    console.log('Images:', images);
-    console.log('Main image index:', mainImageIndex);
-    console.log('Variants:', variants);
+    // Prepare product data
+    const productData = {
+      ...values,
+      slug: generateSlug(values.name),
+      imageUrl: images.length > 0 ? images[mainImageIndex] : '',
+      categoryId: values.categoryId ? parseInt(values.categoryId) : null,
+      brandId: values.brandId ? parseInt(values.brandId) : null,
+    };
     
-    // Navigate back to product list after saving
-    navigate('/admin/products');
+    if (isEditMode && productId) {
+      // Update existing product
+      updateProductMutation.mutate({ 
+        id: parseInt(productId),
+        productData
+      });
+    } else {
+      // Create new product
+      createProductMutation.mutate(productData);
+    }
   };
   
   const handleAddVariant = () => {
