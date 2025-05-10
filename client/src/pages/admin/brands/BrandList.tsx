@@ -23,40 +23,40 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog';
-import { Trash, Pencil, Plus, Loader2 } from 'lucide-react';
+import { Trash, Pencil, Plus, Loader2, Star } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 
-const CategoryList = () => {
+const BrandList = () => {
   const [location, navigate] = useLocation();
   const { toast } = useToast();
-  const { t, language } = useLanguage();
+  const { t } = useLanguage();
   const [deleteId, setDeleteId] = React.useState<number | null>(null);
 
-  // Fetch categories
-  const { data: categories, isLoading, refetch } = useQuery({
-    queryKey: ['/api/categories'],
+  // Fetch brands
+  const { data: brands, isLoading, refetch } = useQuery({
+    queryKey: ['/api/brands'],
     staleTime: 60000, // 1 minute
   });
 
-  // Delete category mutation
+  // Delete brand mutation
   const deleteMutation = useMutation({
     mutationFn: (id: number) => {
-      return apiRequest(`/api/admin/categories/${id}`, {
+      return apiRequest(`/api/admin/brands/${id}`, {
         method: 'DELETE',
       });
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['/api/categories'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/brands'] });
       toast({
         title: "Thành công",
-        description: "Danh mục đã được xóa thành công",
+        description: "Thương hiệu đã được xóa thành công",
       });
       setDeleteId(null);
     },
     onError: (error: any) => {
       toast({
         title: "Lỗi",
-        description: error.message || "Không thể xóa danh mục. Vui lòng thử lại.",
+        description: error.message || "Không thể xóa thương hiệu. Vui lòng thử lại.",
         variant: "destructive",
       });
     }
@@ -68,29 +68,12 @@ const CategoryList = () => {
     }
   };
 
-  // Function to get category name based on language
-  const getCategoryName = (category: any) => {
-    if (language === 'vi') return category.name;
-    if (language === 'en') return category.nameEn;
-    return category.nameZh;
-  };
-
-  // Function to get parent category name
-  const getParentCategoryName = (parentId: number | null) => {
-    if (!parentId || !categories) return 'N/A';
-    
-    const parent = categories.find((c: any) => c.id === parentId);
-    if (!parent) return 'N/A';
-    
-    return getCategoryName(parent);
-  };
-
   return (
     <AdminLayout>
       <div className="flex items-center justify-between mb-6">
-        <h1 className="text-2xl font-bold">Quản lý danh mục</h1>
-        <Button onClick={() => navigate('/admin/categories/new')}>
-          <Plus className="mr-2 h-4 w-4" /> Thêm danh mục
+        <h1 className="text-2xl font-bold">Quản lý thương hiệu</h1>
+        <Button onClick={() => navigate('/admin/brands/new')}>
+          <Plus className="mr-2 h-4 w-4" /> Thêm thương hiệu
         </Button>
       </div>
 
@@ -104,26 +87,35 @@ const CategoryList = () => {
             <TableHeader>
               <TableRow>
                 <TableHead>ID</TableHead>
-                <TableHead>Tên danh mục</TableHead>
-                <TableHead>Slug</TableHead>
-                <TableHead>Danh mục cha</TableHead>
+                <TableHead>Tên thương hiệu</TableHead>
+                <TableHead>Logo</TableHead>
+                <TableHead>Nổi bật</TableHead>
                 <TableHead className="text-right">Thao tác</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
-              {categories && categories.length > 0 ? (
-                categories.map((category: any) => (
-                  <TableRow key={category.id}>
-                    <TableCell className="font-medium">{category.id}</TableCell>
+              {brands && brands.length > 0 ? (
+                brands.map((brand: any) => (
+                  <TableRow key={brand.id}>
+                    <TableCell className="font-medium">{brand.id}</TableCell>
                     <TableCell>
-                      <div className="font-medium">{getCategoryName(category)}</div>
-                      {language !== 'vi' && <div className="text-xs text-gray-500">{category.name}</div>}
+                      <div className="font-medium">{brand.name}</div>
                     </TableCell>
-                    <TableCell>{category.slug}</TableCell>
                     <TableCell>
-                      {category.parentId ? (
-                        <Badge variant="outline">
-                          {getParentCategoryName(category.parentId)}
+                      {brand.logoUrl ? (
+                        <img
+                          src={brand.logoUrl}
+                          alt={brand.name}
+                          className="h-8 w-auto object-contain"
+                        />
+                      ) : (
+                        <span className="text-gray-500">-</span>
+                      )}
+                    </TableCell>
+                    <TableCell>
+                      {brand.isFeatured ? (
+                        <Badge className="bg-yellow-500">
+                          <Star className="h-3 w-3 mr-1" /> Nổi bật
                         </Badge>
                       ) : (
                         <span className="text-gray-500">-</span>
@@ -133,14 +125,14 @@ const CategoryList = () => {
                       <Button
                         variant="ghost"
                         size="sm"
-                        onClick={() => navigate(`/admin/categories/edit/${category.id}`)}
+                        onClick={() => navigate(`/admin/brands/edit/${brand.id}`)}
                       >
                         <Pencil className="h-4 w-4" />
                       </Button>
                       <Button
                         variant="ghost"
                         size="sm"
-                        onClick={() => setDeleteId(category.id)}
+                        onClick={() => setDeleteId(brand.id)}
                       >
                         <Trash className="h-4 w-4" />
                       </Button>
@@ -150,7 +142,7 @@ const CategoryList = () => {
               ) : (
                 <TableRow>
                   <TableCell colSpan={5} className="text-center py-10 text-gray-500">
-                    Không có danh mục nào. Hãy tạo danh mục mới.
+                    Không có thương hiệu nào. Hãy tạo thương hiệu mới.
                   </TableCell>
                 </TableRow>
               )}
@@ -163,9 +155,9 @@ const CategoryList = () => {
       <Dialog open={!!deleteId} onOpenChange={(open) => !open && setDeleteId(null)}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Xác nhận xóa danh mục</DialogTitle>
+            <DialogTitle>Xác nhận xóa thương hiệu</DialogTitle>
             <DialogDescription>
-              Bạn có chắc chắn muốn xóa danh mục này không? Hành động này không thể hoàn tác.
+              Bạn có chắc chắn muốn xóa thương hiệu này không? Hành động này không thể hoàn tác.
             </DialogDescription>
           </DialogHeader>
           <DialogFooter>
@@ -183,7 +175,7 @@ const CategoryList = () => {
                   Đang xóa...
                 </>
               ) : (
-                'Xóa danh mục'
+                'Xóa thương hiệu'
               )}
             </Button>
           </DialogFooter>
@@ -193,4 +185,4 @@ const CategoryList = () => {
   );
 };
 
-export default CategoryList;
+export default BrandList;
