@@ -1,4 +1,4 @@
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { useLanguage } from "@/hooks/useLanguage";
 import { Language } from "@/lib/i18n";
 
@@ -22,6 +22,9 @@ const LanguageSelector = ({ isOpen, onClose }: LanguageSelectorProps) => {
           <DialogTitle className="text-xl font-semibold text-primary">
             {t("select-language")}
           </DialogTitle>
+          <DialogDescription>
+            Chọn ngôn ngữ hiển thị cho ứng dụng Yapee
+          </DialogDescription>
         </DialogHeader>
         <div className="grid grid-cols-1 gap-4 mt-4">
           <button

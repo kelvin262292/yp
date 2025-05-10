@@ -6,7 +6,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 const YapeeMall = () => {
   const { t } = useLanguage();
   
-  const { data: brands, isLoading } = useQuery({
+  const { data: brands, isLoading } = useQuery<Brand[]>({
     queryKey: ['/api/brands', { isFeatured: true }],
   });
 
@@ -20,8 +20,8 @@ const YapeeMall = () => {
               {t("authentic-brands")}
             </span>
           </div>
-          <Link href="/yapee-mall">
-            <a className="text-secondary hover:underline">{t("see-more")}</a>
+          <Link href="/yapee-mall" className="text-secondary hover:underline">
+            {t("see-more")}
           </Link>
         </div>
         
