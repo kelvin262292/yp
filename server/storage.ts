@@ -734,11 +734,18 @@ export class MemStorage implements IStorage {
   // Flash deal methods
   async getFlashDeals(): Promise<(FlashDeal & { product: Product })[]> {
     const flashDeals = Array.from(this.flashDeals.values());
-    return flashDeals.map(deal => {
+    const validDeals = [];
+    
+    for (const deal of flashDeals) {
       const product = this.products.get(deal.productId);
-      if (!product) throw new Error(`Product with ID ${deal.productId} not found`);
-      return { ...deal, product };
-    });
+      if (product) {
+        validDeals.push({ ...deal, product });
+      } else {
+        console.warn(`Product with ID ${deal.productId} not found for flash deal ${deal.id}`);
+      }
+    }
+    
+    return validDeals;
   }
   
   async getFlashDealById(id: number): Promise<(FlashDeal & { product: Product }) | undefined> {
