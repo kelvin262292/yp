@@ -1,5 +1,6 @@
 import { Link } from "wouter";
 import { useLanguage } from "@/hooks/useLanguage";
+import { Facebook, Instagram, Twitter, Youtube, ArrowUp } from "lucide-react";
 
 const Footer = () => {
   const { t } = useLanguage();
@@ -46,13 +47,13 @@ const Footer = () => {
                 <img src="https://images.unsplash.com/photo-1601581975053-7c899da7347e?auto=format&fit=crop&w=50&h=30" alt="PayPal" className="h-6 w-auto" />
               </div>
               <div className="bg-white p-2 rounded">
-                <i className="fas fa-money-bill-wave text-primary text-xl"></i>
+                <span className="text-primary font-semibold text-sm">MoMo</span>
               </div>
               <div className="bg-white p-2 rounded">
-                <i className="fas fa-credit-card text-primary text-xl"></i>
+                <span className="text-primary font-semibold text-sm">ZaloPay</span>
               </div>
               <div className="bg-white p-2 rounded">
-                <i className="fas fa-wallet text-primary text-xl"></i>
+                <span className="text-primary font-semibold text-sm">VNPay</span>
               </div>
             </div>
             <h3 className="font-poppins font-semibold text-xl mb-4 mt-6">{t("shipping-partners")}</h3>
@@ -69,21 +70,29 @@ const Footer = () => {
             </div>
           </div>
           
-          {/* Follow Us */}
+          {/* Contact & Follow Us */}
           <div>
+            <h3 className="font-poppins font-semibold text-xl mb-4">{t("contact-details")}</h3>
+            <div className="space-y-2 mb-6">
+              <p className="text-white/80">Yapee</p>
+              <p className="text-white/80">74 đường số 13, P. Bình Trị Đông B</p>
+              <p className="text-white/80">Q. Bình Tân, TP. Hồ Chí Minh</p>
+              <p className="text-white/80">Hotline: 0333.938.014</p>
+              <p className="text-white/80">Email: cskh@yapee.vn</p>
+            </div>
             <h3 className="font-poppins font-semibold text-xl mb-4">{t("follow-us")}</h3>
             <div className="flex space-x-4 mb-6">
               <a href="https://facebook.com" target="_blank" rel="noopener noreferrer" className="bg-white text-primary rounded-full w-10 h-10 flex items-center justify-center hover:bg-light transition">
-                <i className="fab fa-facebook-f"></i>
+                <Facebook size={20} />
               </a>
               <a href="https://instagram.com" target="_blank" rel="noopener noreferrer" className="bg-white text-primary rounded-full w-10 h-10 flex items-center justify-center hover:bg-light transition">
-                <i className="fab fa-instagram"></i>
+                <Instagram size={20} />
               </a>
               <a href="https://twitter.com" target="_blank" rel="noopener noreferrer" className="bg-white text-primary rounded-full w-10 h-10 flex items-center justify-center hover:bg-light transition">
-                <i className="fab fa-twitter"></i>
+                <Twitter size={20} />
               </a>
               <a href="https://youtube.com" target="_blank" rel="noopener noreferrer" className="bg-white text-primary rounded-full w-10 h-10 flex items-center justify-center hover:bg-light transition">
-                <i className="fab fa-youtube"></i>
+                <Youtube size={20} />
               </a>
             </div>
             <h3 className="font-poppins font-semibold text-xl mb-4">{t("app-download")}</h3>
@@ -95,10 +104,11 @@ const Footer = () => {
         
         <div className="border-t border-white/20 mt-8 pt-6">
           <div className="flex flex-col md:flex-row justify-between items-center">
-            <p className="text-white/60 text-sm mb-4 md:mb-0">{t("copyright")}</p>
+            <p className="text-white/60 text-sm mb-4 md:mb-0">© 2023 Yapee. {t("all-rights-reserved")}</p>
             <div className="flex space-x-4">
-              <button onClick={() => document.querySelector('html')?.scrollTo({ top: 0, behavior: 'smooth' })}>
-                <i className="fas fa-arrow-up text-white/80 hover:text-white"></i>
+              <button onClick={() => document.querySelector('html')?.scrollTo({ top: 0, behavior: 'smooth' })} 
+                      className="bg-white/10 hover:bg-white/20 rounded-full p-2 transition-colors">
+                <ArrowUp size={18} className="text-white" />
               </button>
             </div>
           </div>
