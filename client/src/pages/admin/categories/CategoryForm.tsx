@@ -135,7 +135,7 @@ const CategoryForm = () => {
     const categoryData = {
       ...values,
       slug: values.slug || generateSlug(values.name),
-      parentId: values.parentId ? parseInt(values.parentId) : null,
+      parentId: values.parentId && values.parentId !== "none" ? parseInt(values.parentId) : null,
     };
     
     if (isEditMode && categoryId) {

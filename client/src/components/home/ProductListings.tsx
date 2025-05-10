@@ -55,7 +55,7 @@ const ProductListings = () => {
             {t("recommended-for-you")}
           </h2>
           <Link href="/products">
-            <a className="text-secondary hover:underline">{t("see-more")}</a>
+            <div className="text-secondary hover:underline cursor-pointer">{t("see-more")}</div>
           </Link>
         </div>
         

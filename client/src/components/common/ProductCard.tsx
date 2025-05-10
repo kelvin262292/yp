@@ -57,13 +57,13 @@ const ProductCard = ({ product }: ProductCardProps) => {
     <div className="bg-white rounded-lg hover:shadow-md transition group">
       <div className="relative">
         <Link href={`/product/${product.slug}`}>
-          <a>
+          <div className="cursor-pointer">
             <img 
               src={product.imageUrl} 
               alt={productName} 
               className="w-full h-48 object-contain p-4" 
             />
-          </a>
+          </div>
         </Link>
         <button 
           className="absolute top-2 right-2 text-gray-500 hover:text-secondary transition-colors"
@@ -120,11 +120,11 @@ const ProductCard = ({ product }: ProductCardProps) => {
       </div>
       <div className="p-4">
         <Link href={`/product/${product.slug}`}>
-          <a>
+          <div className="cursor-pointer">
             <h3 className="text-sm font-medium line-clamp-2 hover:text-secondary">
               {productName}
             </h3>
-          </a>
+          </div>
         </Link>
         <div className="flex items-center mt-2">
           <span className="text-accent font-semibold">
