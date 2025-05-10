@@ -1,4 +1,4 @@
-import React, { createContext, useState, useEffect } from "react";
+import React, { createContext, useState, useEffect, useContext } from "react";
 import { Product, CartItem } from "@shared/schema";
 import { apiRequest } from "@/lib/queryClient";
 import { nanoid } from "nanoid";
@@ -13,6 +13,15 @@ interface CartContextType {
 }
 
 export const CartContext = createContext<CartContextType | undefined>(undefined);
+
+// Custom hook để sử dụng CartContext
+export const useCart = () => {
+  const context = useContext(CartContext);
+  if (context === undefined) {
+    throw new Error('useCart must be used within a CartProvider');
+  }
+  return context;
+};
 
 export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [cartItems, setCartItems] = useState<(CartItem & { product: Product })[]>([]);

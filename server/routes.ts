@@ -1,6 +1,7 @@
 import type { Express, Request, Response } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
+import Stripe from "stripe";
 import { 
   insertCartItemSchema, 
   insertCartSchema, 
@@ -11,6 +12,14 @@ import {
   insertBannerSchema
 } from "@shared/schema";
 import { nanoid } from "nanoid";
+
+// Khởi tạo Stripe với khóa API
+if (!process.env.STRIPE_SECRET_KEY) {
+  throw new Error('Thiếu khóa API STRIPE_SECRET_KEY cho Stripe');
+}
+const stripe = new Stripe(process.env.STRIPE_SECRET_KEY, {
+  apiVersion: "2023-10-16",
+});
 
 export async function registerRoutes(app: Express): Promise<Server> {
   // API routes prefix
@@ -495,6 +504,37 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // API thanh toán với Stripe
+  app.post(`${apiPrefix}/create-payment-intent`, async (req: Request, res: Response) => {
+    try {
+      const { amount } = req.body;
+      
+      if (!amount || typeof amount !== 'number' || amount <= 0) {
+        return res.status(400).json({ message: "Số tiền không hợp lệ" });
+      }
+      
+      // Tạo payment intent với Stripe
+      const paymentIntent = await stripe.paymentIntents.create({
+        amount: Math.round(amount), // Số tiền đã là VND nên không cần nhân với 100
+        currency: "vnd",
+        automatic_payment_methods: {
+          enabled: true,
+        },
+      });
+      
+      // Trả về client secret
+      res.json({
+        clientSecret: paymentIntent.client_secret,
+      });
+    } catch (error: any) {
+      console.error("Lỗi khi tạo payment intent:", error);
+      res.status(500).json({ 
+        message: "Lỗi khi xử lý thanh toán",
+        error: error.message 
+      });
+    }
+  });
+  
   const httpServer = createServer(app);
   return httpServer;
 }

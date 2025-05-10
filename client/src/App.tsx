@@ -6,6 +6,8 @@ import Home from "@/pages/Home";
 import ProductDetail from "@/pages/ProductDetail";
 import Cart from "@/pages/Cart";
 import Account from "@/pages/Account";
+import Checkout from "@/pages/checkout/Checkout";
+import CheckoutSuccess from "@/pages/checkout/CheckoutSuccess";
 
 // Info pages
 import AboutPage from "@/pages/info/AboutPage";
@@ -50,6 +52,8 @@ function App() {
           <Route path="/product/:slug" component={ProductDetail} />
           <Route path="/cart" component={Cart} />
           <Route path="/account" component={Account} />
+          <Route path="/checkout" component={Checkout} />
+          <Route path="/checkout/success" component={CheckoutSuccess} />
           
           {/* Info Pages */}
           <Route path="/about" component={AboutPage} />
