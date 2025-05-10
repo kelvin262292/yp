@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { Link, useLocation } from 'wouter';
+import React, { useState, useEffect } from 'react';
+import { Link, useLocation, useRoute, useParams } from 'wouter';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
@@ -10,10 +10,14 @@ import {
   Upload,
   X,
   Plus,
-  Info
+  Info,
+  Loader2
 } from 'lucide-react';
 import { useLanguage } from '@/hooks/useLanguage';
 import AdminLayout from '@/components/admin/layout/AdminLayout';
+import { useToast } from '@/hooks/use-toast';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { apiRequest } from '@/lib/queryClient';
 import {
   Form,
   FormControl,

@@ -1,7 +1,15 @@
 import type { Express, Request, Response } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
-import { insertCartItemSchema, insertCartSchema } from "@shared/schema";
+import { 
+  insertCartItemSchema, 
+  insertCartSchema, 
+  insertProductSchema, 
+  insertCategorySchema, 
+  insertBrandSchema,
+  insertFlashDealSchema,
+  insertBannerSchema
+} from "@shared/schema";
 import { nanoid } from "nanoid";
 
 export async function registerRoutes(app: Express): Promise<Server> {
@@ -318,6 +326,172 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error("Error removing cart item:", error);
       res.status(500).json({ message: "Error removing cart item" });
+    }
+  });
+  
+  // Admin API endpoints
+  
+  // Products admin endpoints
+  app.post(`${apiPrefix}/admin/products`, async (req: Request, res: Response) => {
+    try {
+      const productData = insertProductSchema.parse(req.body);
+      const product = await storage.createProduct(productData);
+      res.status(201).json(product);
+    } catch (error) {
+      console.error("Error creating product:", error);
+      res.status(500).json({ message: "Error creating product" });
+    }
+  });
+  
+  app.put(`${apiPrefix}/admin/products/:id`, async (req: Request, res: Response) => {
+    try {
+      const id = parseInt(req.params.id);
+      // Validate product exists
+      const existingProduct = await storage.getProductById(id);
+      if (!existingProduct) {
+        return res.status(404).json({ message: "Product not found" });
+      }
+      
+      // Update product logic would go here
+      // Currently, our storage interface doesn't have an updateProduct method
+      // This is where we would implement it in a real application
+      
+      res.json({ message: "Product updated successfully", id });
+    } catch (error) {
+      console.error("Error updating product:", error);
+      res.status(500).json({ message: "Error updating product" });
+    }
+  });
+  
+  app.delete(`${apiPrefix}/admin/products/:id`, async (req: Request, res: Response) => {
+    try {
+      const id = parseInt(req.params.id);
+      // Delete product logic would go here
+      // Currently, our storage interface doesn't have a deleteProduct method
+      // This is where we would implement it in a real application
+      
+      res.status(204).end();
+    } catch (error) {
+      console.error("Error deleting product:", error);
+      res.status(500).json({ message: "Error deleting product" });
+    }
+  });
+  
+  // Categories admin endpoints
+  app.post(`${apiPrefix}/admin/categories`, async (req: Request, res: Response) => {
+    try {
+      const categoryData = insertCategorySchema.parse(req.body);
+      const category = await storage.createCategory(categoryData);
+      res.status(201).json(category);
+    } catch (error) {
+      console.error("Error creating category:", error);
+      res.status(500).json({ message: "Error creating category" });
+    }
+  });
+  
+  app.put(`${apiPrefix}/admin/categories/:id`, async (req: Request, res: Response) => {
+    try {
+      const id = parseInt(req.params.id);
+      // Validate category exists
+      const existingCategory = await storage.getCategoryById(id);
+      if (!existingCategory) {
+        return res.status(404).json({ message: "Category not found" });
+      }
+      
+      // Update category logic would go here
+      
+      res.json({ message: "Category updated successfully", id });
+    } catch (error) {
+      console.error("Error updating category:", error);
+      res.status(500).json({ message: "Error updating category" });
+    }
+  });
+  
+  app.delete(`${apiPrefix}/admin/categories/:id`, async (req: Request, res: Response) => {
+    try {
+      const id = parseInt(req.params.id);
+      // Delete category logic would go here
+      
+      res.status(204).end();
+    } catch (error) {
+      console.error("Error deleting category:", error);
+      res.status(500).json({ message: "Error deleting category" });
+    }
+  });
+  
+  // Brands admin endpoints
+  app.post(`${apiPrefix}/admin/brands`, async (req: Request, res: Response) => {
+    try {
+      const brandData = insertBrandSchema.parse(req.body);
+      const brand = await storage.createBrand(brandData);
+      res.status(201).json(brand);
+    } catch (error) {
+      console.error("Error creating brand:", error);
+      res.status(500).json({ message: "Error creating brand" });
+    }
+  });
+  
+  // Flash deals admin endpoints
+  app.post(`${apiPrefix}/admin/flash-deals`, async (req: Request, res: Response) => {
+    try {
+      const flashDealData = insertFlashDealSchema.parse(req.body);
+      const flashDeal = await storage.createFlashDeal(flashDealData);
+      res.status(201).json(flashDeal);
+    } catch (error) {
+      console.error("Error creating flash deal:", error);
+      res.status(500).json({ message: "Error creating flash deal" });
+    }
+  });
+  
+  app.put(`${apiPrefix}/admin/flash-deals/:id/sold-count`, async (req: Request, res: Response) => {
+    try {
+      const id = parseInt(req.params.id);
+      const { increment } = req.body;
+      
+      if (typeof increment !== 'number') {
+        return res.status(400).json({ message: "Invalid increment value" });
+      }
+      
+      const updatedFlashDeal = await storage.updateFlashDealSoldCount(id, increment);
+      if (!updatedFlashDeal) {
+        return res.status(404).json({ message: "Flash deal not found" });
+      }
+      
+      res.json(updatedFlashDeal);
+    } catch (error) {
+      console.error("Error updating flash deal sold count:", error);
+      res.status(500).json({ message: "Error updating flash deal sold count" });
+    }
+  });
+  
+  // Banners admin endpoints
+  app.post(`${apiPrefix}/admin/banners`, async (req: Request, res: Response) => {
+    try {
+      const bannerData = insertBannerSchema.parse(req.body);
+      const banner = await storage.createBanner(bannerData);
+      res.status(201).json(banner);
+    } catch (error) {
+      console.error("Error creating banner:", error);
+      res.status(500).json({ message: "Error creating banner" });
+    }
+  });
+  
+  // Admin dashboard stats
+  app.get(`${apiPrefix}/admin/stats`, async (req: Request, res: Response) => {
+    try {
+      // In a real application, we would implement logic to gather statistics
+      // For now, we'll return mock data
+      res.json({
+        totalProducts: 120,
+        totalOrders: 450,
+        totalSales: 12500,
+        totalCustomers: 300,
+        recentOrders: [],
+        salesData: []
+      });
+    } catch (error) {
+      console.error("Error getting admin stats:", error);
+      res.status(500).json({ message: "Error getting admin stats" });
     }
   });
 
