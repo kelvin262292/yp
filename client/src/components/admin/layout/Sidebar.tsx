@@ -17,7 +17,8 @@ import {
   MessageSquare,
   Bell,
   BadgePercent,
-  PanelLeft
+  PanelLeft,
+  ImageIcon
 } from 'lucide-react';
 import { useLanguage } from '@/context/LanguageContext';
 import { Button } from '@/components/ui/button';
@@ -230,6 +231,13 @@ const Sidebar = () => {
           icon={<BadgePercent size={18} />} 
           title={t('admin.marketing')}
           selected={isSelected('/admin/marketing')}
+        />
+        
+        <MenuItem 
+          path="/admin/banners" 
+          icon={<ImageIcon size={18} />} 
+          title={t('admin.banners')}
+          selected={isSelected('/admin/banners')}
         />
         
         <MenuItem 

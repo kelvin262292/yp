@@ -29,6 +29,8 @@ import CategoryList from "@/pages/admin/categories/CategoryList";
 import CategoryForm from "@/pages/admin/categories/CategoryForm";
 import BrandList from "@/pages/admin/brands/BrandList";
 import BrandForm from "@/pages/admin/brands/BrandForm";
+import BannerList from "@/pages/admin/banners/BannerList";
+import BannerForm from "@/pages/admin/banners/BannerForm";
 import OrderList from "@/pages/admin/orders/OrderList";
 import CustomersList from "@/pages/admin/customers/CustomersList";
 import MarketingDashboard from "@/pages/admin/marketing/MarketingDashboard";
@@ -91,6 +93,9 @@ function App() {
           <Route path="/admin/payments" component={PaymentsDashboard} />
           <Route path="/admin/shipping" component={ShippingDashboard} />
           <Route path="/admin/users" component={UsersList} />
+          <Route path="/admin/banners" component={BannerList} />
+          <Route path="/admin/banners/new" component={BannerForm} />
+          <Route path="/admin/banners/edit/:id" component={BannerForm} />
           
           <Route component={NotFound} />
         </Switch>
