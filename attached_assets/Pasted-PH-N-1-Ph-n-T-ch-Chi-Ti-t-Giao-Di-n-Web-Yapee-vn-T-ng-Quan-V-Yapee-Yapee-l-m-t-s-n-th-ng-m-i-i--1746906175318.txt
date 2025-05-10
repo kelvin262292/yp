@@ -1,0 +1,195 @@
+PHẦN 1: Phân Tích Chi Tiết Giao Diện Web Yapee.vn
+Tổng Quan Về Yapee
+Yapee là một sàn thương mại điện tử hàng đầu tại Đông Nam Á, mang đến trải nghiệm mua sắm trực tuyến nhanh chóng, an toàn và tiện lợi. Website cung cấp đa dạng sản phẩm từ thời trang, điện tử tiêu dùng, đồ gia dụng, đồ chơi đến thiết bị thể thao. Giao diện Yapee.vn được thiết kế tối ưu hóa trải nghiệm người dùng (UX), giúp khách hàng dễ dàng tìm kiếm, so sánh và mua sắm.
+
+Sứ mệnh của Yapee:
+
+Cung cấp sản phẩm chất lượng cao với dịch vụ hoàn hảo.
+Hỗ trợ nhiều phương thức thanh toán.
+Chính sách đổi trả miễn phí.
+Cam kết dịch vụ khách hàng và bảo hành toàn diện.
+Hỗ trợ đa ngôn ngữ:
+
+Tiếng Việt: Ngôn ngữ mặc định tại Yapee.vn.
+Tiếng Anh: Phục vụ khách hàng quốc tế và khu vực.
+Tiếng Trung: Hỗ trợ người dùng tại thị trường nói tiếng Trung hoặc khách hàng Trung Quốc tại Việt Nam.
+Phân Tích Màu Sắc Chủ Đạo
+Màu sắc là yếu tố quan trọng trong nhận diện thương hiệu và trải nghiệm người dùng. Yapee sử dụng bảng màu nhất quán để tăng cường nhận biết thương hiệu và hỗ trợ tương tác.
+
+Màu sắc	Mã màu	Mẫu	Vị trí sử dụng
+Xanh dương đậm	#0F146D	███████	Logo, thanh điều hướng, tiêu đề chính
+Cam	#F57224	███████	Nút CTA, nhãn khuyến mãi, highlight
+Trắng	#FFFFFF	□	Nền chính, text trên nền tối
+Xám nhạt	#EFF0F5	⬜	Nền phụ, đường viền, phân tách
+Đỏ	#D3232A	███████	Thông báo, giá khuyến mãi, cảnh báo
+Nhận xét:
+
+Sự kết hợp giữa xanh dương đậm (chuyên nghiệp, đáng tin cậy) và cam (năng động, thu hút) tạo nên cảm giác hiện đại, phù hợp với định vị thương hiệu của Yapee.
+Các màu được dịch sang 3 ngôn ngữ trong giao diện để đảm bảo tính đồng bộ:
+Tiếng Trung: 深蓝色 (Xanh dương đậm), 橙色 (Cam), 白色 (Trắng), 浅灰色 (Xám nhạt), 红色 (Đỏ).
+Tiếng Anh: Dark Blue, Orange, White, Light Gray, Red.
+Header (Đầu Trang)
+3.1. Thanh Điều Hướng Trên Cùng
+Thanh điều hướng được thiết kế gọn gàng, sử dụng font chữ nhỏ, dễ đọc, hỗ trợ đa ngôn ngữ:
+
+Chức năng	Tiếng Việt	Tiếng Anh	Tiếng Trung
+Thu thập phản hồi	FEEDBACK	Feedback	反馈
+Khuyến khích dùng app	SAVE MORE ON APP	Save More on App	在应用上节省更多
+Cổng cho người bán	SELL ON YAPEE	Sell on Yapee	在Yapee上销售
+Hỗ trợ khách hàng	CUSTOMER CARE	Customer Care	客户服务
+Theo dõi đơn hàng	TRACK MY ORDER	Track My Order	追踪我的订单
+Đăng nhập/Đăng ký	LOGIN/SIGNUP	Login/Signup	登录/注册
+3.2. Thanh Tìm Kiếm và Logo
+Logo Yapee: Nằm góc trái, màu xanh dương đậm (#0F146D), nổi bật trên mọi ngôn ngữ.
+Thanh tìm kiếm: Rộng, dễ nhận biết, placeholder thay đổi theo ngôn ngữ:
+Tiếng Việt: "Tìm kiếm sản phẩm".
+Tiếng Anh: "Search for products".
+Tiếng Trung: "搜索产品".
+Nút tìm kiếm: Màu cam (#F57224), biểu tượng giỏ hàng bên phải.
+QR Code: Liên kết tải ứng dụng di động, hỗ trợ iOS và Android.
+Banner Quảng Cáo Chính
+Banner chính hiển thị các chương trình khuyến mãi nổi bật:
+
+Carousel: Tự động chuyển sau 5-7 giây.
+Nút điều hướng: Hai bên để điều khiển thủ công.
+Chỉ báo: Hiển thị vị trí trong chuỗi banner.
+Thiết kế: Màu sắc rực rỡ, hình ảnh chất lượng cao.
+CTA: Nút "Mua ngay" (Buy Now / 立即购买) hoặc "Xem thêm" (See More / 查看更多).
+Đồng hồ đếm ngược: Ví dụ: "5.5 Sale Chiến" (dịch sang Tiếng Anh: "5.5 Mega Sale", Tiếng Trung: "5.5大促销").
+Danh Mục Sản Phẩm
+5.1. YapeeMall
+Khu vực dành cho thương hiệu chính hãng:
+
+Logo: "YapeeMall" với tagline "100% Authentic Brands" (100% Thương hiệu chính hãng / 100%正品品牌).
+Hiển thị: Lưới các thương hiệu nổi bật.
+Thông tin: Thẻ ngắn gọn kèm nút "Xem thêm" (See More / 查看更多).
+5.2. Deal Chớp Nhoáng
+Ưu đãi giới hạn thời gian:
+
+Đếm ngược: Giờ, phút, giây (dịch sang 3 ngôn ngữ).
+Giảm giá: Nhãn phần trăm nổi bật.
+Giá: Giá gốc gạch ngang, giá khuyến mãi màu đỏ (#D3232A).
+Thanh tiến trình: Số lượng đã bán.
+5.3. Danh Mục Ngành Hàng
+Biểu tượng: Trực quan, dễ hiểu.
+Tên danh mục: Ngắn gọn, đa ngôn ngữ:
+Điện thoại: Phones / 电话.
+Làm đẹp: Beauty / 美妆.
+Điện tử: Electronics / 电子产品.
+Thời trang: Fashion / 时尚.
+Hiệu ứng: Hover khi di chuột, phân cấp chi tiết khi nhấp.
+Hiển Thị Sản Phẩm
+6.1. Thẻ Sản Phẩm
+Hình ảnh: Chất lượng cao.
+Tên: Tối đa 2 dòng, hỗ trợ 3 ngôn ngữ.
+Giá: Màu đỏ (#D3232A), giá gốc gạch ngang.
+Nhãn: "Sale" (Giảm giá / 折扣), "Hot Deal" (Ưu đãi hot / 热门优惠).
+Đánh giá: Sao và số lượng review.
+Chính sách: "Free Shipping" (Miễn phí vận chuyển / 免费配送), "0% Installment" (Trả góp 0% / 0%分期付款).
+6.2. Sắp Xếp Sản Phẩm
+Theo độ phổ biến (Popularity / 受欢迎程度).
+Theo giá (Price: Low to High / 价格：低到高).
+Theo đánh giá (Ratings / 评分).
+Theo thời gian (Newest / 最新).
+Cá nhân hóa (Personalized / 个性化).
+Đề Xuất và Cá Nhân Hóa
+7.1. Dành Riêng Cho Bạn
+AI: Đề xuất dựa trên lịch sử duyệt và mua sắm.
+Ngữ cảnh: Điều chỉnh theo mùa, thời gian.
+Dịch: "For You" / "为你推荐".
+7.2. Xu Hướng Tìm Kiếm
+Từ khóa phổ biến (Popular Keywords / 热门关键词).
+Sản phẩm hot (Hot Products / 热门产品).
+Danh mục nổi bật (Trending Categories / 热门类别).
+Chân Trang (Footer)
+8.1. Thông Tin Công Ty và Liên Hệ
+Dịch vụ khách hàng (Customer Service / 客户服务).
+Giới thiệu Yapee (About Yapee / 关于Yapee).
+Phương thức thanh toán (Payment Methods / 支付方式).
+QR Code tải app.
+8.2. Đối Tác và Liên Kết
+Vận chuyển: Ninja Van, GrabExpress, GHN, Viettel Post.
+Mạng xã hội: Facebook, Instagram, YouTube, TikTok.
+Phân Tích Trải Nghiệm Người Dùng (UX)
+9.1. Điểm Mạnh
+Cấu trúc logic, dễ điều hướng.
+Khuyến mãi nổi bật.
+Tìm kiếm thông minh (Smart Search / 智能搜索).
+Cá nhân hóa cao.
+Đồng bộ đa nền tảng.
+9.2. Cơ Hội Cải Thiện
+Giảm mật độ thông tin.
+Tối ưu banner quảng cáo.
+Hiển thị tên sản phẩm đầy đủ.
+Cải thiện tốc độ tải trang.
+Tổ chức bộ lọc tốt hơn.
+9.3. So Sánh Đối Thủ
+Tính năng	Yapee	Shopee	Tiki
+Bố cục trang chủ	Cân bằng banner và danh mục	Tập trung danh mục, flash deals	Theo chủ đề, ngành hàng
+Màu sắc chủ đạo	Xanh dương đậm, Cam	Cam, Đỏ	Xanh lam
+Tính năng đặc trưng	YapeeMall	ShopeePay, Shopee Live	TikiNOW, Astra
+Trải nghiệm mobile	Tích hợp app cao	Tập trung app	Cân bằng web và app
+Kết Luận
+Giao diện Yapee.vn tập trung vào trải nghiệm người dùng với:
+
+Hệ thống màu sắc nhất quán.
+Danh mục đa cấp dễ tìm kiếm.
+Cá nhân hóa bằng AI.
+Hỗ trợ 3 ngôn ngữ linh hoạt, đáp ứng nhu cầu đa dạng của khách hàng tại Việt Nam và Đông Nam Á.
+PHẦN 2: Mô Tả Chi Tiết Trang Sản Phẩm Yapee
+2.1. Phần Đầu Trang (Header)
+Logo: "Yapee" màu xanh dương đậm.
+Thanh tìm kiếm: Placeholder đa ngôn ngữ.
+Tiện ích: Yêu thích (Favorites / 收藏), Tài khoản (Account / 账户), Giỏ hàng (Cart / 购物车).
+Breadcrumb: Ví dụ: Trang chủ > Dành cho bạn > Hub Baseus (Home > For You > Baseus Hub / 首页 > 为你推荐 > Baseus集线器).
+2.2. Khu Vực Thông Tin Chính
+Cột trái: Hình ảnh lớn, thumbnails đa góc độ.
+Cột phải:
+Tên sản phẩm: "Hub Baseus Type C to HDMI USB 3.0" (dịch sang Tiếng Trung: "Baseus Type C转HDMI USB 3.0集线器").
+Giá: 499.000₫ (giá gốc: 1.090.000₫).
+Mã giảm giá: "Giảm 50%" (50% Off / 50%折扣).
+Nút: "Thêm vào giỏ hàng" (Add to Cart / 加入购物车), "Mua ngay" (Buy Now / 立即购买).
+Chính sách: "Miễn phí vận chuyển" (Free Shipping / 免费配送).
+2.3. Tab Thông Tin
+Mô tả (Description / 描述).
+Thông số kỹ thuật (Specifications / 规格).
+Đánh giá (Reviews / 评论).
+Hỏi & Đáp (Q&A / 问答).
+2.4. Sản Phẩm Liên Quan
+Gợi ý: "Related Products" / "相关产品".
+2.5. Footer
+Đồng bộ với trang chủ.
+2.6. Thiết Kế
+Màu chủ đạo: Marrs Green (#018c8c), trắng, xám.
+Tập trung hình ảnh, nút CTA nổi bật.
+PHẦN 3: Mô Tả Trang Quản Trị (Admin Dashboard)
+3.1. Giới Thiệu
+Trang quản trị cung cấp công cụ giám sát và quản lý hệ thống Yapee, hỗ trợ 3 ngôn ngữ.
+
+3.2. Bố Cục
+Header: Logo, tìm kiếm, thông báo (Notifications / 通知).
+Sidebar: Menu chức năng (Orders / 订单, Products / 产品).
+Nội dung chính: Cards, bảng dữ liệu, biểu đồ.
+Footer: Thông tin công ty.
+3.3. Màu Sắc
+Xanh dương đậm (#0F146D): Header, Sidebar.
+Cam (#F57224): Nút chính.
+Trắng (#FFFFFF): Nền nội dung.
+3.4. Thành Phần
+Cards, bảng, biểu đồ, nút, form nhập liệu.
+3.5. Đặc Điểm
+Nhất quán, trực quan, responsive.
+PHẦN 4: Trang "Tài Khoản Của Tôi" (Dựa trên Hoangphuconline.vn)
+4.1. Bố Cục
+2 cột: Sidebar trái, nội dung chính.
+4.2. Header
+Logo, tìm kiếm, tiện ích (Cart / 购物车).
+4.3. Breadcrumbs
+"Trang chủ > Tài khoản của tôi" (Home > My Account / 首页 > 我的账户).
+4.4. Nội Dung Chính
+Thông tin cá nhân (Personal Info / 个人信息).
+Đơn hàng gần đây (Recent Orders / 最近订单).
+4.5. Sidebar
+Menu: Đơn hàng (Orders / 订单), Đăng xuất (Logout / 退出).
+4.6. Footer
+Liên hệ, mạng xã hội.
