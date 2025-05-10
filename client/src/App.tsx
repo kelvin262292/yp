@@ -32,6 +32,9 @@ import CustomersList from "@/pages/admin/customers/CustomersList";
 import MarketingDashboard from "@/pages/admin/marketing/MarketingDashboard";
 import ReportsDashboard from "@/pages/admin/reports/ReportsDashboard";
 import SettingsDashboard from "@/pages/admin/settings/SettingsDashboard";
+import PaymentsDashboard from "@/pages/admin/payments/PaymentsDashboard";
+import ShippingDashboard from "@/pages/admin/shipping/ShippingDashboard";
+import UsersList from "@/pages/admin/users/UsersList";
 
 function App() {
   const [location] = useLocation();
@@ -81,6 +84,9 @@ function App() {
           <Route path="/admin/marketing" component={MarketingDashboard} />
           <Route path="/admin/reports" component={ReportsDashboard} />
           <Route path="/admin/settings" component={SettingsDashboard} />
+          <Route path="/admin/payments" component={PaymentsDashboard} />
+          <Route path="/admin/shipping" component={ShippingDashboard} />
+          <Route path="/admin/users" component={UsersList} />
           
           <Route component={NotFound} />
         </Switch>

@@ -212,6 +212,13 @@ const Sidebar = () => {
         </div>
         
         <MenuItem 
+          path="/admin/users" 
+          icon={<Users size={18} />} 
+          title="Quản lý người dùng"
+          selected={isSelected('/admin/users')}
+        />
+        
+        <MenuItem 
           path="/admin/customers" 
           icon={<Users size={18} />} 
           title={t('admin.customers')}
