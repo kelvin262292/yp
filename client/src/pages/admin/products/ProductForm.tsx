@@ -744,7 +744,7 @@ const ProductForm = () => {
                                   </SelectItem>
                                 ))
                               ) : (
-                                <SelectItem value="" disabled>
+                                <SelectItem value="no-brand" disabled>
                                   {t('admin.noBrands')}
                                 </SelectItem>
                               )}
