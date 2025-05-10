@@ -6,7 +6,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 const YapeeMall = () => {
   const { t } = useLanguage();
   
-  const { data: brands, isLoading } = useQuery<Brand[]>({
+  const { data: brands, isLoading } = useQuery({
     queryKey: ['/api/brands', { isFeatured: true }],
   });
 

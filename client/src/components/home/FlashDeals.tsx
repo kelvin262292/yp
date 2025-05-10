@@ -68,8 +68,8 @@ const FlashDeals = () => {
                 <span className="countdown-timer font-semibold">{formattedTime}</span>
               </div>
             </div>
-            <Link href="/flash-deals">
-              <a className="text-secondary hover:underline">{t("see-more")}</a>
+            <Link href="/flash-deals" className="text-secondary hover:underline">
+              {t("see-more")}
             </Link>
           </div>
           
@@ -98,7 +98,7 @@ const FlashDeals = () => {
                 return (
                   <div key={deal.id} className="bg-white rounded-lg border hover:shadow-md transition">
                     <div className="relative">
-                      <Link href={`/product/${deal.product.slug}`}>
+                      <Link href={`/product/${deal.product.slug}`} className="block">
                         <img 
                           src={deal.product.imageUrl} 
                           alt={deal.product.name} 
@@ -110,7 +110,7 @@ const FlashDeals = () => {
                       </span>
                     </div>
                     <div className="p-3">
-                      <Link href={`/product/${deal.product.slug}`}>
+                      <Link href={`/product/${deal.product.slug}`} className="block">
                         <h3 className="text-sm font-medium truncate">
                           {language === 'en' ? deal.product.nameEn : 
                            language === 'zh' ? deal.product.nameZh : 
