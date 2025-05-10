@@ -6,8 +6,8 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter }
 import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
 import { useToast } from '@/hooks/use-toast';
-import { useCart } from '@/context/CartContext';
-import { useLanguage } from '@/context/LanguageContext';
+import { useCart } from '@/hooks/useCart';
+import { useLanguage } from '@/hooks/useLanguage';
 import { apiRequest } from '@/lib/queryClient';
 import Header from '@/components/layout/Header';
 import Footer from '@/components/layout/Footer';

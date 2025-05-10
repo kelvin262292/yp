@@ -296,9 +296,11 @@ const Cart = () => {
                     </div>
                   </div>
                   
-                  <Button className="w-full bg-secondary hover:bg-secondary/90">
-                    {t("checkout")}
-                  </Button>
+                  <Link href="/checkout">
+                    <Button className="w-full bg-secondary hover:bg-secondary/90">
+                      {t("checkout")}
+                    </Button>
+                  </Link>
                   
                   <div className="mt-4 text-center">
                     <Link href="/">

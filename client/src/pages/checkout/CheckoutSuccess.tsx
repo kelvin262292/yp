@@ -5,7 +5,7 @@ import { useStripe } from '@stripe/react-stripe-js';
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
-import { useCart } from '@/context/CartContext';
+import { useCart } from '@/hooks/useCart';
 import { CheckCircle, ShoppingBag } from 'lucide-react';
 import Header from '@/components/layout/Header';
 import Footer from '@/components/layout/Footer';
