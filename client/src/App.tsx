@@ -28,6 +28,10 @@ import CategoryForm from "@/pages/admin/categories/CategoryForm";
 import BrandList from "@/pages/admin/brands/BrandList";
 import BrandForm from "@/pages/admin/brands/BrandForm";
 import OrderList from "@/pages/admin/orders/OrderList";
+import CustomersList from "@/pages/admin/customers/CustomersList";
+import MarketingDashboard from "@/pages/admin/marketing/MarketingDashboard";
+import ReportsDashboard from "@/pages/admin/reports/ReportsDashboard";
+import SettingsDashboard from "@/pages/admin/settings/SettingsDashboard";
 
 function App() {
   const [location] = useLocation();
@@ -73,6 +77,10 @@ function App() {
           <Route path="/admin/orders/shipping" component={OrderList} />
           <Route path="/admin/orders/delivered" component={OrderList} />
           <Route path="/admin/orders/cancelled" component={OrderList} />
+          <Route path="/admin/customers" component={CustomersList} />
+          <Route path="/admin/marketing" component={MarketingDashboard} />
+          <Route path="/admin/reports" component={ReportsDashboard} />
+          <Route path="/admin/settings" component={SettingsDashboard} />
           
           <Route component={NotFound} />
         </Switch>
