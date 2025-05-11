@@ -7,6 +7,7 @@ import { ThemeProvider } from "next-themes";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { LanguageProvider } from "@/context/LanguageContext";
 import { CartProvider } from "@/context/CartContext";
+import { AuthProvider } from "@/context/AuthContext";
 import { Toaster } from "@/components/ui/toaster";
 
 createRoot(document.getElementById("root")!).render(
@@ -14,10 +15,12 @@ createRoot(document.getElementById("root")!).render(
     <ThemeProvider attribute="class" defaultTheme="light">
       <TooltipProvider>
         <LanguageProvider>
+          <AuthProvider>
           <CartProvider>
             <Toaster />
             <App />
           </CartProvider>
+          </AuthProvider>
         </LanguageProvider>
       </TooltipProvider>
     </ThemeProvider>

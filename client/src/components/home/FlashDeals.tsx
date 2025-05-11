@@ -1,32 +1,147 @@
 import { useState, useEffect } from "react";
 import { Link } from "wouter";
-import { useQuery } from "@tanstack/react-query";
-import { useLanguage } from "@/hooks/useLanguage";
-import { formatPrice } from "@/lib/i18n";
-import { Skeleton } from "@/components/ui/skeleton";
+import { useTranslation } from "react-i18next";
+import { toast } from "react-hot-toast";
+import { Skeleton } from "../ui/skeleton";
+import { useCart } from "../../hooks/useCart";
+import { Button } from "../ui/button";
+import { Star, ShoppingCart, Plus } from "lucide-react";
 
-const FlashDeals = () => {
-  const { language, t } = useLanguage();
+interface FlashDeal {
+  id: number;
+  productId: number;
+  startDate: string;
+  endDate: string;
+  totalStock: number;
+  soldCount: number;
+  product: {
+    id: number;
+    name: string;
+    nameEn: string;
+    nameZh: string;
+    slug: string;
+    price: number;
+    originalPrice: number | null;
+    discountPercentage: number | null;
+    imageUrl: string;
+    rating: number;
+    reviewCount: number;
+    freeShipping: boolean;
+  };
+}
+
+export const FlashDeals = () => {
+  const { t, i18n } = useTranslation();
+  const language = i18n.language;
+  const { addToCart } = useCart();
   const [timeLeft, setTimeLeft] = useState({
     hours: 5,
-    minutes: 23,
-    seconds: 45
+    minutes: 0,
+    seconds: 0
   });
-  
-  const { data: flashDeals, isLoading } = useQuery({
-    queryKey: ['/api/flash-deals'],
-  });
+  const [flashDeals, setFlashDeals] = useState<FlashDeal[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+
+  // Format price according to language
+  const formatPrice = (price: number) => {
+    if (language === 'en') {
+      return `$${price.toFixed(2)}`;
+    } else if (language === 'zh') {
+      return `¥${(price * 7).toFixed(2)}`;
+    } else {
+      return `${price.toLocaleString('vi-VN')}₫`;
+    }
+  };
 
   // Format countdown time
   const formattedTime = `${String(timeLeft.hours).padStart(2, '0')}:${String(timeLeft.minutes).padStart(2, '0')}:${String(timeLeft.seconds).padStart(2, '0')}`;
+
+  // Fetch flash deals
+  useEffect(() => {
+    const fetchFlashDeals = async () => {
+      try {
+        setIsLoading(true);
+        // Sử dụng URL tuyệt đối để đảm bảo kết nối đúng tới API endpoint
+        const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000';
+        const response = await fetch(`${API_URL}/api/flash-deals/active`);
+        
+        if (!response.ok) {
+          if (response.status === 404) {
+            // Không có flash deals active
+            console.log('No active flash deals found');
+            setFlashDeals([]);
+            return;
+          }
+          throw new Error(`HTTP error! Status: ${response.status}`);
+        }
+        
+        const data = await response.json();
+        setFlashDeals(data);
+        
+        // If deals exist, set countdown to the nearest ending deal
+        if (data.length > 0) {
+          const nearestEndDate = new Date(data[0].endDate);
+          const now = new Date();
+          const diff = Math.max(0, Math.floor((nearestEndDate.getTime() - now.getTime()) / 1000));
+          
+          setTimeLeft({
+            hours: Math.floor(diff / 3600),
+            minutes: Math.floor((diff % 3600) / 60),
+            seconds: diff % 60
+          });
+        }
+      } catch (error) {
+        console.error('Error fetching flash deals:', error);
+        toast.error(t("failed-to-load-flash-deals"));
+        setFlashDeals([]);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchFlashDeals();
+  }, [t]);
 
   // Countdown timer
   useEffect(() => {
     const timer = setInterval(() => {
       setTimeLeft(prev => {
         if (prev.hours === 0 && prev.minutes === 0 && prev.seconds === 0) {
-          // Reset timer to 5 hours when it reaches zero
-          return { hours: 5, minutes: 0, seconds: 0 };
+          // Refetch deals when timer reaches zero
+          const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000';
+          fetch(`${API_URL}/api/flash-deals/active`)
+            .then(res => {
+              if (!res.ok) {
+                if (res.status === 404) {
+                  return []; // Không có flash deals active
+                }
+                throw new Error(`HTTP error! Status: ${res.status}`);
+              }
+              return res.json();
+            })
+            .then(data => {
+              setFlashDeals(data);
+              
+              // Reset timer to nearest ending deal
+              if (data.length > 0) {
+                const nearestEndDate = new Date(data[0].endDate);
+                const now = new Date();
+                const diff = Math.max(0, Math.floor((nearestEndDate.getTime() - now.getTime()) / 1000));
+                
+                return {
+                  hours: Math.floor(diff / 3600),
+                  minutes: Math.floor((diff % 3600) / 60),
+                  seconds: diff % 60
+                };
+              }
+              
+              // Default timer if no deals found
+              return { hours: 5, minutes: 0, seconds: 0 };
+            })
+            .catch(err => {
+              console.error('Error refreshing flash deals:', err);
+              return { hours: 5, minutes: 0, seconds: 0 };
+            });
         }
         
         let newHours = prev.hours;
@@ -54,21 +169,34 @@ const FlashDeals = () => {
     return () => clearInterval(timer);
   }, []);
 
+  const handleAddToCart = (product) => {
+    addToCart({
+      id: product.id,
+      name: product.name,
+      nameEn: product.nameEn,
+      nameZh: product.nameZh,
+      price: product.price,
+      imageUrl: product.imageUrl,
+      quantity: 1
+    });
+    toast.success(t("added-to-cart"));
+  };
+
   return (
-    <section className="py-8 bg-light">
-      <div className="container mx-auto px-4">
-        <div className="bg-white rounded-lg p-6">
+    <section className="py-8">
+      <div className="container">
+        <div className="bg-white rounded-lg p-6 shadow-sm">
           <div className="flex justify-between items-center mb-6">
             <div className="flex items-center">
-              <h2 className="text-primary text-2xl font-poppins font-semibold">
+              <h2 className="text-primary text-2xl font-bold">
                 {t("flash-deals")}
               </h2>
-              <div className="ml-4 flex items-center space-x-1 bg-secondary text-white px-2 py-1 rounded-md">
+              <div className="ml-4 flex items-center space-x-1 bg-accent text-white px-3 py-1 rounded-md">
                 <span className="text-xs">{t("ends-in")}</span>
-                <span className="countdown-timer font-semibold">{formattedTime}</span>
+                <span className="font-mono font-semibold ml-1">{formattedTime}</span>
               </div>
             </div>
-            <Link href="/flash-deals" className="text-secondary hover:underline">
+            <Link to="/flash-deals" className="text-primary hover:underline">
               {t("see-more")}
             </Link>
           </div>
@@ -79,7 +207,7 @@ const FlashDeals = () => {
               Array(5).fill(0).map((_, index) => (
                 <div key={index} className="bg-white rounded-lg border hover:shadow-md transition">
                   <div className="relative">
-                    <Skeleton className="w-full h-40 object-contain p-2" />
+                    <Skeleton className="w-full h-40 rounded-t-lg" />
                   </div>
                   <div className="p-3">
                     <Skeleton className="h-4 w-full mb-2" />
@@ -95,54 +223,59 @@ const FlashDeals = () => {
               // Actual flash deals
               flashDeals.map((deal) => {
                 const soldPercentage = (deal.soldCount / deal.totalStock) * 100;
+                const product = deal.product;
+                const displayName = language === 'en' ? product.nameEn : 
+                                   language === 'zh' ? product.nameZh : 
+                                   product.name;
                 return (
                   <div key={deal.id} className="bg-white rounded-lg border hover:shadow-md transition">
                     <div className="relative">
-                      <Link href={`/product/${deal.product.slug}`} className="block">
+                      <Link to={`/product/${product.slug}`} className="block">
                         <img 
-                          src={deal.product.imageUrl} 
-                          alt={deal.product.name} 
-                          className="w-full h-40 object-contain p-2" 
+                          src={product.imageUrl} 
+                          alt={displayName} 
+                          className="w-full h-40 object-contain p-2 rounded-t-lg" 
                         />
                       </Link>
                       <span className="absolute top-2 left-2 bg-accent text-white text-xs px-2 py-1 rounded">
-                        {deal.product.discountPercentage ? `-${deal.product.discountPercentage}%` : "SALE"}
+                        {product.discountPercentage ? `-${product.discountPercentage}%` : "SALE"}
                       </span>
                     </div>
                     <div className="p-3">
-                      <Link href={`/product/${deal.product.slug}`} className="block">
-                        <h3 className="text-sm font-medium truncate">
-                          {language === 'en' ? deal.product.nameEn : 
-                           language === 'zh' ? deal.product.nameZh : 
-                           deal.product.name}
+                      <Link to={`/product/${product.slug}`} className="block">
+                        <h3 className="text-sm font-medium line-clamp-2 h-10">
+                          {displayName}
                         </h3>
                       </Link>
                       <div className="flex items-center mt-1">
                         <span className="text-accent font-semibold">
-                          {formatPrice(deal.product.price, language)}
+                          {formatPrice(product.price)}
                         </span>
-                        {deal.product.originalPrice && (
+                        {product.originalPrice && (
                           <span className="text-gray-500 text-xs line-through ml-2">
-                            {formatPrice(deal.product.originalPrice, language)}
+                            {formatPrice(product.originalPrice)}
                           </span>
                         )}
                       </div>
                       <div className="flex items-center mt-1 text-xs text-gray-500">
                         <div className="flex">
-                          {[...Array(Math.floor(deal.product.rating))].map((_, i) => (
-                            <i key={i} className="fas fa-star text-yellow-400"></i>
-                          ))}
-                          {deal.product.rating % 1 >= 0.5 && (
-                            <i className="fas fa-star-half-alt text-yellow-400"></i>
-                          )}
-                          {[...Array(5 - Math.ceil(deal.product.rating))].map((_, i) => (
-                            <i key={i} className="fas fa-star text-gray-300"></i>
+                          {Array(5).fill(0).map((_, i) => (
+                            <Star
+                              key={i}
+                              className={`h-3 w-3 ${
+                                i < Math.floor(product.rating)
+                                  ? "text-yellow-400 fill-yellow-400"
+                                  : "text-gray-300"
+                              }`}
+                            />
                           ))}
                         </div>
-                        <span className="ml-1">{deal.product.rating} ({deal.product.reviewCount})</span>
+                        <span className="ml-1">
+                          {product.rating} ({product.reviewCount})
+                        </span>
                       </div>
                       <div className="mt-2 text-xs">
-                        {deal.product.freeShipping && (
+                        {product.freeShipping && (
                           <span className="text-primary">{t("free-shipping")}</span>
                         )}
                       </div>
@@ -152,8 +285,18 @@ const FlashDeals = () => {
                           style={{ width: `${soldPercentage}%` }}
                         ></div>
                       </div>
-                      <div className="text-xs text-gray-500 mt-1">
-                        {t("sold")} {deal.soldCount}/{deal.totalStock}
+                      <div className="flex justify-between items-center mt-1">
+                        <div className="text-xs text-gray-500">
+                          {t("sold")} {deal.soldCount}/{deal.totalStock}
+                        </div>
+                        <Button 
+                          variant="ghost" 
+                          size="icon" 
+                          className="h-8 w-8 text-primary"
+                          onClick={() => handleAddToCart(product)}
+                        >
+                          <ShoppingCart className="h-4 w-4" />
+                        </Button>
                       </div>
                     </div>
                   </div>
@@ -162,7 +305,7 @@ const FlashDeals = () => {
             ) : (
               // Fallback for no data
               <div className="col-span-full text-center py-4">
-                <p>No flash deals available</p>
+                <p className="text-gray-500">{t("no-flash-deals-available")}</p>
               </div>
             )}
           </div>

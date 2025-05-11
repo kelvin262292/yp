@@ -1,5 +1,5 @@
 import { Helmet } from "react-helmet";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import AdminLayout from "@/components/admin/layout/AdminLayout";
 import {
   Card,
@@ -51,6 +51,8 @@ import {
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { Separator } from "@/components/ui/separator";
+import axios from "axios";
+import Spinner from "@/components/ui/spinner";
 
 // Định nghĩa schema cài đặt chung
 const generalSettingsSchema = z.object({
@@ -131,6 +133,7 @@ const shippingSettingsSchema = z.object({
 // Component cài đặt chung
 const GeneralSettingsForm = () => {
   const { toast } = useToast();
+  const [loading, setLoading] = useState(false);
   
   const form = useForm<z.infer<typeof generalSettingsSchema>>({
     resolver: zodResolver(generalSettingsSchema),
@@ -148,13 +151,76 @@ const GeneralSettingsForm = () => {
     },
   });
   
-  const onSubmit = (values: z.infer<typeof generalSettingsSchema>) => {
-    toast({
-      title: "Cài đặt đã được lưu",
-      description: "Thông tin cài đặt chung đã được cập nhật thành công.",
-    });
-    console.log("Các cài đặt được lưu:", values);
+  // Fetch settings on component mount
+  useEffect(() => {
+    const fetchSettings = async () => {
+      try {
+        setLoading(true);
+        const response = await axios.get('/api/admin/settings?group=general');
+        
+        if (response.data.general && response.data.general.length > 0) {
+          const generalSettings = response.data.general.reduce((acc: any, setting: any) => {
+            acc[setting.key.replace('general.', '')] = setting.value;
+            return acc;
+          }, {});
+          
+          form.reset(generalSettings);
+        }
+      } catch (error) {
+        console.error('Error fetching general settings:', error);
+        toast({
+          variant: "destructive",
+          title: "Lỗi",
+          description: "Không thể tải cài đặt. Vui lòng thử lại sau.",
+        });
+      } finally {
+        setLoading(false);
+      }
+    };
+    
+    fetchSettings();
+  }, [form, toast]);
+  
+  const onSubmit = async (values: z.infer<typeof generalSettingsSchema>) => {
+    try {
+      setLoading(true);
+      
+      // Convert values to settings format
+      const settingsToUpdate = Object.entries(values).map(([key, value]) => ({
+        key: `general.${key}`,
+        value,
+        group: 'general',
+        description: `General setting: ${key}`
+      }));
+      
+      // Send batch update request
+      await axios.post('/api/admin/settings/batch', {
+        settings: settingsToUpdate
+      });
+      
+      toast({
+        title: "Cài đặt đã được lưu",
+        description: "Thông tin cài đặt chung đã được cập nhật thành công.",
+      });
+    } catch (error) {
+      console.error('Error saving general settings:', error);
+      toast({
+        variant: "destructive",
+        title: "Lỗi",
+        description: "Không thể lưu cài đặt. Vui lòng thử lại sau.",
+      });
+    } finally {
+      setLoading(false);
+    }
   };
+  
+  if (loading) {
+    return (
+      <div className="flex justify-center items-center py-12">
+        <Spinner size="lg" />
+      </div>
+    );
+  }
   
   return (
     <Form {...form}>
@@ -349,8 +415,9 @@ const GeneralSettingsForm = () => {
         </div>
         
         <div className="flex justify-end">
-          <Button type="submit">
-            <Save className="h-4 w-4 mr-2" />
+          <Button type="submit" disabled={loading}>
+            {loading && <Spinner className="mr-2" size="sm" />}
+            <Save className="mr-2 h-4 w-4" />
             Lưu cài đặt
           </Button>
         </div>
@@ -362,28 +429,97 @@ const GeneralSettingsForm = () => {
 // Component cài đặt thanh toán
 const PaymentSettingsForm = () => {
   const { toast } = useToast();
+  const [loading, setLoading] = useState(false);
   
   const form = useForm<z.infer<typeof paymentSettingsSchema>>({
     resolver: zodResolver(paymentSettingsSchema),
     defaultValues: {
       currency: "VND",
-      stripeLiveKey: "sk_live_xxxxxxxxxxxxxxxxxxxxxx",
-      stripeTestKey: "sk_test_xxxxxxxxxxxxxxxxxxxxxx",
+      stripeLiveKey: "",
+      stripeTestKey: "",
       enableVnpay: true,
       enableMomo: true,
       enableCod: true,
-      enableStripe: true,
+      enableStripe: false,
       testMode: true,
     },
   });
   
-  const onSubmit = (values: z.infer<typeof paymentSettingsSchema>) => {
-    toast({
-      title: "Cài đặt đã được lưu",
-      description: "Cài đặt thanh toán đã được cập nhật thành công.",
-    });
-    console.log("Các cài đặt được lưu:", values);
+  // Fetch settings on component mount
+  useEffect(() => {
+    const fetchSettings = async () => {
+      try {
+        setLoading(true);
+        const response = await axios.get('/api/admin/settings?group=payment');
+        
+        if (response.data.payment && response.data.payment.length > 0) {
+          const paymentSettings = response.data.payment.reduce((acc: any, setting: any) => {
+            // Parse boolean values
+            if (setting.key.startsWith('payment.enable') || setting.key === 'payment.testMode') {
+              acc[setting.key.replace('payment.', '')] = setting.value === 'true' || setting.value === true;
+            } else {
+              acc[setting.key.replace('payment.', '')] = setting.value;
+            }
+            return acc;
+          }, {});
+          
+          form.reset(paymentSettings);
+        }
+      } catch (error) {
+        console.error('Error fetching payment settings:', error);
+        toast({
+          variant: "destructive",
+          title: "Lỗi",
+          description: "Không thể tải cài đặt thanh toán. Vui lòng thử lại sau.",
+        });
+      } finally {
+        setLoading(false);
+      }
+    };
+    
+    fetchSettings();
+  }, [form, toast]);
+  
+  const onSubmit = async (values: z.infer<typeof paymentSettingsSchema>) => {
+    try {
+      setLoading(true);
+      
+      // Convert values to settings format
+      const settingsToUpdate = Object.entries(values).map(([key, value]) => ({
+        key: `payment.${key}`,
+        value,
+        group: 'payment',
+        description: `Payment setting: ${key}`
+      }));
+      
+      // Send batch update request
+      await axios.post('/api/admin/settings/batch', {
+        settings: settingsToUpdate
+      });
+      
+      toast({
+        title: "Cài đặt đã được lưu",
+        description: "Cài đặt thanh toán đã được cập nhật thành công.",
+      });
+    } catch (error) {
+      console.error('Error saving payment settings:', error);
+      toast({
+        variant: "destructive",
+        title: "Lỗi",
+        description: "Không thể lưu cài đặt. Vui lòng thử lại sau.",
+      });
+    } finally {
+      setLoading(false);
+    }
   };
+  
+  if (loading) {
+    return (
+      <div className="flex justify-center items-center py-12">
+        <Spinner size="lg" />
+      </div>
+    );
+  }
   
   return (
     <Form {...form}>
@@ -585,8 +721,9 @@ const PaymentSettingsForm = () => {
         </div>
         
         <div className="flex justify-end">
-          <Button type="submit">
-            <Save className="h-4 w-4 mr-2" />
+          <Button type="submit" disabled={loading}>
+            {loading && <Spinner className="mr-2" size="sm" />}
+            <Save className="mr-2 h-4 w-4" />
             Lưu cài đặt
           </Button>
         </div>
@@ -598,6 +735,7 @@ const PaymentSettingsForm = () => {
 // Component cài đặt thông báo
 const NotificationSettingsForm = () => {
   const { toast } = useToast();
+  const [loading, setLoading] = useState(false);
   
   const form = useForm<z.infer<typeof notificationSettingsSchema>>({
     resolver: zodResolver(notificationSettingsSchema),
@@ -608,22 +746,98 @@ const NotificationSettingsForm = () => {
       newUserRegistration: true,
       lowStockAlert: true,
       enablePushNotifications: false,
-      smtpHost: "smtp.example.com",
+      smtpHost: "smtp.gmail.com",
       smtpPort: 587,
-      smtpUsername: "noreply@yapee.vn",
-      smtpPassword: "password",
+      smtpUsername: "",
+      smtpPassword: "",
       smtpFromEmail: "noreply@yapee.vn",
       enableSms: false,
     },
   });
   
-  const onSubmit = (values: z.infer<typeof notificationSettingsSchema>) => {
-    toast({
-      title: "Cài đặt đã được lưu",
-      description: "Cài đặt thông báo đã được cập nhật thành công.",
-    });
-    console.log("Các cài đặt được lưu:", values);
+  // Fetch settings on component mount
+  useEffect(() => {
+    const fetchSettings = async () => {
+      try {
+        setLoading(true);
+        const response = await axios.get('/api/admin/settings?group=notification');
+        
+        if (response.data.notification && response.data.notification.length > 0) {
+          const notificationSettings = response.data.notification.reduce((acc: any, setting: any) => {
+            // Parse boolean values
+            if (setting.key.startsWith('notification.enable') || 
+                setting.key.includes('Notification') ||
+                setting.key.includes('Alert')) {
+              acc[setting.key.replace('notification.', '')] = setting.value === 'true' || setting.value === true;
+            } 
+            // Parse number values
+            else if (setting.key === 'notification.smtpPort') {
+              acc[setting.key.replace('notification.', '')] = Number(setting.value);
+            }
+            // Parse string values
+            else {
+              acc[setting.key.replace('notification.', '')] = setting.value;
+            }
+            return acc;
+          }, {});
+          
+          form.reset(notificationSettings);
+        }
+      } catch (error) {
+        console.error('Error fetching notification settings:', error);
+        toast({
+          variant: "destructive",
+          title: "Lỗi",
+          description: "Không thể tải cài đặt thông báo. Vui lòng thử lại sau.",
+        });
+      } finally {
+        setLoading(false);
+      }
+    };
+    
+    fetchSettings();
+  }, [form, toast]);
+  
+  const onSubmit = async (values: z.infer<typeof notificationSettingsSchema>) => {
+    try {
+      setLoading(true);
+      
+      // Convert values to settings format
+      const settingsToUpdate = Object.entries(values).map(([key, value]) => ({
+        key: `notification.${key}`,
+        value,
+        group: 'notification',
+        description: `Notification setting: ${key}`
+      }));
+      
+      // Send batch update request
+      await axios.post('/api/admin/settings/batch', {
+        settings: settingsToUpdate
+      });
+      
+      toast({
+        title: "Cài đặt đã được lưu",
+        description: "Cài đặt thông báo đã được cập nhật thành công.",
+      });
+    } catch (error) {
+      console.error('Error saving notification settings:', error);
+      toast({
+        variant: "destructive",
+        title: "Lỗi",
+        description: "Không thể lưu cài đặt. Vui lòng thử lại sau.",
+      });
+    } finally {
+      setLoading(false);
+    }
   };
+  
+  if (loading) {
+    return (
+      <div className="flex justify-center items-center py-12">
+        <Spinner size="lg" />
+      </div>
+    );
+  }
   
   return (
     <Form {...form}>
@@ -881,8 +1095,9 @@ const NotificationSettingsForm = () => {
         </div>
         
         <div className="flex justify-end">
-          <Button type="submit">
-            <Save className="h-4 w-4 mr-2" />
+          <Button type="submit" disabled={loading}>
+            {loading && <Spinner className="mr-2" size="sm" />}
+            <Save className="mr-2 h-4 w-4" />
             Lưu cài đặt
           </Button>
         </div>
@@ -891,31 +1106,106 @@ const NotificationSettingsForm = () => {
   );
 };
 
-// Component cài đặt vận chuyển
+// Component cài đặt giao hàng
 const ShippingSettingsForm = () => {
   const { toast } = useToast();
+  const [loading, setLoading] = useState(false);
   
   const form = useForm<z.infer<typeof shippingSettingsSchema>>({
     resolver: zodResolver(shippingSettingsSchema),
     defaultValues: {
       enableFreeShipping: true,
-      freeShippingMinAmount: 300000,
+      freeShippingMinAmount: 500000,
       enableFlatRate: true,
-      flatRateAmount: 25000,
+      flatRateAmount: 30000,
       enableLocalPickup: true,
-      enableGhtk: true,
+      enableGhtk: false,
       enableGhn: false,
-      defaultShippingMethod: "flat_rate",
+      defaultShippingMethod: "flat-rate",
     },
   });
   
-  const onSubmit = (values: z.infer<typeof shippingSettingsSchema>) => {
-    toast({
-      title: "Cài đặt đã được lưu",
-      description: "Cài đặt vận chuyển đã được cập nhật thành công.",
-    });
-    console.log("Các cài đặt được lưu:", values);
+  // Fetch settings on component mount
+  useEffect(() => {
+    const fetchSettings = async () => {
+      try {
+        setLoading(true);
+        const response = await axios.get('/api/admin/settings?group=shipping');
+        
+        if (response.data.shipping && response.data.shipping.length > 0) {
+          const shippingSettings = response.data.shipping.reduce((acc: any, setting: any) => {
+            // Parse boolean values
+            if (setting.key.startsWith('shipping.enable')) {
+              acc[setting.key.replace('shipping.', '')] = setting.value === 'true' || setting.value === true;
+            } 
+            // Parse number values
+            else if (setting.key.includes('Amount')) {
+              acc[setting.key.replace('shipping.', '')] = Number(setting.value);
+            }
+            // Parse string values
+            else {
+              acc[setting.key.replace('shipping.', '')] = setting.value;
+            }
+            return acc;
+          }, {});
+          
+          form.reset(shippingSettings);
+        }
+      } catch (error) {
+        console.error('Error fetching shipping settings:', error);
+        toast({
+          variant: "destructive",
+          title: "Lỗi",
+          description: "Không thể tải cài đặt vận chuyển. Vui lòng thử lại sau.",
+        });
+      } finally {
+        setLoading(false);
+      }
+    };
+    
+    fetchSettings();
+  }, [form, toast]);
+  
+  const onSubmit = async (values: z.infer<typeof shippingSettingsSchema>) => {
+    try {
+      setLoading(true);
+      
+      // Convert values to settings format
+      const settingsToUpdate = Object.entries(values).map(([key, value]) => ({
+        key: `shipping.${key}`,
+        value,
+        group: 'shipping',
+        description: `Shipping setting: ${key}`
+      }));
+      
+      // Send batch update request
+      await axios.post('/api/admin/settings/batch', {
+        settings: settingsToUpdate
+      });
+      
+      toast({
+        title: "Cài đặt đã được lưu",
+        description: "Cài đặt vận chuyển đã được cập nhật thành công.",
+      });
+    } catch (error) {
+      console.error('Error saving shipping settings:', error);
+      toast({
+        variant: "destructive",
+        title: "Lỗi",
+        description: "Không thể lưu cài đặt. Vui lòng thử lại sau.",
+      });
+    } finally {
+      setLoading(false);
+    }
   };
+  
+  if (loading) {
+    return (
+      <div className="flex justify-center items-center py-12">
+        <Spinner size="lg" />
+      </div>
+    );
+  }
   
   return (
     <Form {...form}>
@@ -1125,7 +1415,8 @@ const ShippingSettingsForm = () => {
         </div>
         
         <div className="flex justify-end">
-          <Button type="submit">
+          <Button type="submit" disabled={loading}>
+            {loading && <Spinner className="mr-2" size="sm" />}
             <Save className="h-4 w-4 mr-2" />
             Lưu cài đặt
           </Button>
@@ -1135,138 +1426,105 @@ const ShippingSettingsForm = () => {
   );
 };
 
+// Component chính Dashboard Settings
 const SettingsDashboard = () => {
-  const { t } = useLanguage();
-  const [activeTab, setActiveTab] = useState<string>("general");
+  const [activeTab, setActiveTab] = useState("general");
+  const [loading, setLoading] = useState(false);
   const { toast } = useToast();
   
-  const handleSaveAll = () => {
-    toast({
-      title: "Tất cả cài đặt đã được lưu",
-      description: "Tất cả cài đặt đã được cập nhật thành công.",
-    });
+  const handleSaveAll = async () => {
+    try {
+      setLoading(true);
+      
+      // Thực hiện yêu cầu GET để lấy tất cả các cài đặt
+      const response = await axios.get('/api/admin/settings');
+      
+      if (Object.keys(response.data).length === 0) {
+        toast({
+          title: "Không có dữ liệu để lưu",
+          description: "Không có cài đặt nào được tìm thấy để lưu.",
+        });
+        return;
+      }
+      
+      toast({
+        title: "Tất cả cài đặt đã được lưu",
+        description: "Tất cả cài đặt hệ thống đã được cập nhật thành công.",
+      });
+    } catch (error) {
+      console.error('Error saving all settings:', error);
+      toast({
+        variant: "destructive",
+        title: "Lỗi",
+        description: "Không thể lưu tất cả cài đặt. Vui lòng thử lại sau.",
+      });
+    } finally {
+      setLoading(false);
+    }
   };
-
+  
   return (
     <AdminLayout>
       <Helmet>
-        <title>Cài đặt hệ thống | Yapee Admin</title>
+        <title>Cài đặt hệ thống - Yapee Admin</title>
       </Helmet>
-
-      <div className="container mx-auto py-6 space-y-6">
-        <div className="flex justify-between items-center">
+      
+      <div className="container py-6">
+        <div className="flex justify-between items-center mb-6">
           <div>
-            <h1 className="text-2xl font-bold">Cài đặt hệ thống</h1>
-            <p className="text-muted-foreground">Quản lý và cấu hình các thiết lập cho toàn bộ hệ thống</p>
+            <h1 className="text-3xl font-bold tracking-tight">Cài đặt hệ thống</h1>
+            <p className="text-muted-foreground">Quản lý cài đặt và cấu hình website</p>
           </div>
-          <Button onClick={handleSaveAll}>
-            <Save className="h-4 w-4 mr-2" />
-            Lưu tất cả cài đặt
+          
+          <Button onClick={handleSaveAll} disabled={loading}>
+            {loading && <Spinner className="mr-2" size="sm" />}
+            <Settings className="mr-2 h-4 w-4" />
+            Lưu tất cả
           </Button>
         </div>
-
-        <Tabs defaultValue="general" className="space-y-6" value={activeTab} onValueChange={setActiveTab}>
-          <div className="border-b">
-            <TabsList className="w-full justify-start rounded-none border-b-0 bg-transparent p-0">
-              <TabsTrigger
-                value="general"
-                className={`data-[state=active]:border-primary data-[state=active]:bg-transparent data-[state=active]:shadow-none rounded-none border-b-2 border-transparent py-3 ${activeTab === "general" ? "border-primary" : ""}`}
-              >
-                <Globe className="h-4 w-4 mr-2" />
-                Tổng quan
-              </TabsTrigger>
-              <TabsTrigger
-                value="payment"
-                className={`data-[state=active]:border-primary data-[state=active]:bg-transparent data-[state=active]:shadow-none rounded-none border-b-2 border-transparent py-3 ${activeTab === "payment" ? "border-primary" : ""}`}
-              >
-                <CreditCard className="h-4 w-4 mr-2" />
-                Thanh toán
-              </TabsTrigger>
-              <TabsTrigger
-                value="shipping"
-                className={`data-[state=active]:border-primary data-[state=active]:bg-transparent data-[state=active]:shadow-none rounded-none border-b-2 border-transparent py-3 ${activeTab === "shipping" ? "border-primary" : ""}`}
-              >
-                <Truck className="h-4 w-4 mr-2" />
-                Vận chuyển
-              </TabsTrigger>
-              <TabsTrigger
-                value="notifications"
-                className={`data-[state=active]:border-primary data-[state=active]:bg-transparent data-[state=active]:shadow-none rounded-none border-b-2 border-transparent py-3 ${activeTab === "notifications" ? "border-primary" : ""}`}
-              >
-                <BellRing className="h-4 w-4 mr-2" />
-                Thông báo
-              </TabsTrigger>
-            </TabsList>
-          </div>
-          
-          <TabsContent value="general" className="space-y-6">
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center">
-                  <Settings className="h-5 w-5 mr-2" />
+        
+        <Card className="mb-8">
+          <Tabs value={activeTab} onValueChange={setActiveTab}>
+            <CardHeader>
+              <TabsList className="grid grid-cols-4">
+                <TabsTrigger value="general">
+                  <Globe className="h-4 w-4 mr-2" />
                   Cài đặt chung
-                </CardTitle>
-                <CardDescription>
-                  Quản lý các cài đặt cơ bản cho website của bạn
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
+                </TabsTrigger>
+                <TabsTrigger value="payment">
+                  <CreditCard className="h-4 w-4 mr-2" />
+                  Thanh toán
+                </TabsTrigger>
+                <TabsTrigger value="notification">
+                  <BellRing className="h-4 w-4 mr-2" />
+                  Thông báo
+                </TabsTrigger>
+                <TabsTrigger value="shipping">
+                  <Truck className="h-4 w-4 mr-2" />
+                  Vận chuyển
+                </TabsTrigger>
+              </TabsList>
+            </CardHeader>
+            
+            <CardContent className="pt-6">
+              <TabsContent value="general" className="mt-0">
                 <GeneralSettingsForm />
-              </CardContent>
-            </Card>
-          </TabsContent>
-          
-          <TabsContent value="payment" className="space-y-6">
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center">
-                  <CreditCard className="h-5 w-5 mr-2" />
-                  Cài đặt thanh toán
-                </CardTitle>
-                <CardDescription>
-                  Quản lý phương thức thanh toán và cấu hình thanh toán
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
+              </TabsContent>
+              
+              <TabsContent value="payment" className="mt-0">
                 <PaymentSettingsForm />
-              </CardContent>
-            </Card>
-          </TabsContent>
-          
-          <TabsContent value="shipping" className="space-y-6">
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center">
-                  <Truck className="h-5 w-5 mr-2" />
-                  Cài đặt vận chuyển
-                </CardTitle>
-                <CardDescription>
-                  Quản lý phương thức vận chuyển và phí vận chuyển
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <ShippingSettingsForm />
-              </CardContent>
-            </Card>
-          </TabsContent>
-          
-          <TabsContent value="notifications" className="space-y-6">
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center">
-                  <BellRing className="h-5 w-5 mr-2" />
-                  Cài đặt thông báo
-                </CardTitle>
-                <CardDescription>
-                  Quản lý cách thức gửi thông báo đến người dùng và admin
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
+              </TabsContent>
+              
+              <TabsContent value="notification" className="mt-0">
                 <NotificationSettingsForm />
-              </CardContent>
-            </Card>
-          </TabsContent>
-        </Tabs>
+              </TabsContent>
+              
+              <TabsContent value="shipping" className="mt-0">
+                <ShippingSettingsForm />
+              </TabsContent>
+            </CardContent>
+          </Tabs>
+        </Card>
       </div>
     </AdminLayout>
   );

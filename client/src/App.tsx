@@ -1,4 +1,7 @@
+import React from "react";
 import { Switch, Route, useLocation } from "wouter";
+import { Toaster } from "./components/ui/toaster";
+import { AdminRoute } from "./components/admin/AdminRoute";
 import NotFound from "@/pages/not-found";
 import Header from "@/components/layout/Header";
 import Footer from "@/components/layout/Footer";
@@ -32,6 +35,7 @@ import BrandForm from "@/pages/admin/brands/BrandForm";
 import BannerList from "@/pages/admin/banners/BannerList";
 import BannerForm from "@/pages/admin/banners/BannerForm";
 import OrderList from "@/pages/admin/orders/OrderList";
+import AdminOrderDetail from "@/pages/admin/orders/OrderDetail";
 import CustomersList from "@/pages/admin/customers/CustomersList";
 import MarketingDashboard from "@/pages/admin/marketing/MarketingDashboard";
 import ReportsDashboard from "@/pages/admin/reports/ReportsDashboard";
@@ -39,6 +43,12 @@ import SettingsDashboard from "@/pages/admin/settings/SettingsDashboard";
 import PaymentsDashboard from "@/pages/admin/payments/PaymentsDashboard";
 import ShippingDashboard from "@/pages/admin/shipping/ShippingDashboard";
 import UsersList from "@/pages/admin/users/UsersList";
+
+// Import the components
+import Orders from './pages/account/Orders';
+import OrderDetail from './pages/account/OrderDetail';
+import SuccessPage from './pages/checkout/SuccessPage';
+import CheckoutForm from './components/checkout/CheckoutForm';
 
 function App() {
   const [location] = useLocation();
@@ -54,8 +64,9 @@ function App() {
           <Route path="/product/:slug" component={ProductDetail} />
           <Route path="/cart" component={Cart} />
           <Route path="/account" component={Account} />
-          <Route path="/checkout" component={Checkout} />
+          <Route path="/checkout" component={CheckoutForm} />
           <Route path="/checkout/success" component={CheckoutSuccess} />
+          <Route path="/checkout/success/:id" component={SuccessPage} />
           
           {/* Info Pages */}
           <Route path="/about" component={AboutPage} />
@@ -69,33 +80,38 @@ function App() {
           <Route path="/report" component={ReportPage} />
           <Route path="/faq" component={FAQPage} />
           
-          {/* Admin Routes */}
-          <Route path="/admin" component={AdminDashboard} />
-          <Route path="/admin/products" component={ProductList} />
-          <Route path="/admin/products/new" component={ProductForm} />
-          <Route path="/admin/products/:id/edit" component={ProductForm} />
-          <Route path="/admin/categories" component={CategoryList} />
-          <Route path="/admin/categories/new" component={CategoryForm} />
-          <Route path="/admin/categories/:id/edit" component={CategoryForm} />
-          <Route path="/admin/brands" component={BrandList} />
-          <Route path="/admin/brands/new" component={BrandForm} />
-          <Route path="/admin/brands/:id/edit" component={BrandForm} />
-          <Route path="/admin/orders" component={OrderList} />
-          <Route path="/admin/orders/pending" component={OrderList} />
-          <Route path="/admin/orders/processing" component={OrderList} />
-          <Route path="/admin/orders/shipping" component={OrderList} />
-          <Route path="/admin/orders/delivered" component={OrderList} />
-          <Route path="/admin/orders/cancelled" component={OrderList} />
-          <Route path="/admin/customers" component={CustomersList} />
-          <Route path="/admin/marketing" component={MarketingDashboard} />
-          <Route path="/admin/reports" component={ReportsDashboard} />
-          <Route path="/admin/settings" component={SettingsDashboard} />
-          <Route path="/admin/payments" component={PaymentsDashboard} />
-          <Route path="/admin/shipping" component={ShippingDashboard} />
-          <Route path="/admin/users" component={UsersList} />
-          <Route path="/admin/banners" component={BannerList} />
-          <Route path="/admin/banners/new" component={BannerForm} />
-          <Route path="/admin/banners/edit/:id" component={BannerForm} />
+          {/* Admin Routes - All protected by AdminRoute component */}
+          <AdminRoute path="/admin" component={AdminDashboard} />
+          <AdminRoute path="/admin/products" component={ProductList} />
+          <AdminRoute path="/admin/products/new" component={ProductForm} />
+          <AdminRoute path="/admin/products/:id/edit" component={ProductForm} />
+          <AdminRoute path="/admin/categories" component={CategoryList} />
+          <AdminRoute path="/admin/categories/new" component={CategoryForm} />
+          <AdminRoute path="/admin/categories/edit/:id" component={CategoryForm} />
+          <AdminRoute path="/admin/brands" component={BrandList} />
+          <AdminRoute path="/admin/brands/new" component={BrandForm} />
+          <AdminRoute path="/admin/brands/edit/:id" component={BrandForm} />
+          <AdminRoute path="/admin/orders" component={OrderList} />
+          <AdminRoute path="/admin/orders/:id" component={AdminOrderDetail} />
+          <AdminRoute path="/admin/orders/pending" component={OrderList} />
+          <AdminRoute path="/admin/orders/processing" component={OrderList} />
+          <AdminRoute path="/admin/orders/shipping" component={OrderList} />
+          <AdminRoute path="/admin/orders/delivered" component={OrderList} />
+          <AdminRoute path="/admin/orders/cancelled" component={OrderList} />
+          <AdminRoute path="/admin/customers" component={CustomersList} />
+          <AdminRoute path="/admin/marketing" component={MarketingDashboard} />
+          <AdminRoute path="/admin/reports" component={ReportsDashboard} />
+          <AdminRoute path="/admin/settings" component={SettingsDashboard} />
+          <AdminRoute path="/admin/payments" component={PaymentsDashboard} />
+          <AdminRoute path="/admin/shipping" component={ShippingDashboard} />
+          <AdminRoute path="/admin/users" component={UsersList} />
+          <AdminRoute path="/admin/banners" component={BannerList} />
+          <AdminRoute path="/admin/banners/new" component={BannerForm} />
+          <AdminRoute path="/admin/banners/edit/:id" component={BannerForm} />
+                  
+          {/* Account Routes */}
+          <Route path="/account/orders" component={Orders} />
+          <Route path="/account/orders/:id" component={OrderDetail} />
           
           <Route component={NotFound} />
         </Switch>

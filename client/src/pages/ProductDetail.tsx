@@ -24,6 +24,8 @@ import {
 import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useToast } from "@/hooks/use-toast";
+import { ReviewList } from "../components/product/ReviewList";
+import { ProductRecommendations } from "../components/product/ProductRecommendations";
 
 const ProductDetail = () => {
   const [match, params] = useRoute("/product/:slug");
@@ -417,41 +419,8 @@ const ProductDetail = () => {
               </TabsContent>
               
               <TabsContent value="reviews">
-                <div className="space-y-4">
-                  {product.reviewCount > 0 ? (
-                    <>
-                      <div className="flex items-center mb-4">
-                        <div className="flex">
-                          {[...Array(Math.floor(product.rating))].map((_, i) => (
-                            <i key={i} className="fas fa-star text-yellow-400 text-xl"></i>
-                          ))}
-                          {product.rating % 1 >= 0.5 && (
-                            <i className="fas fa-star-half-alt text-yellow-400 text-xl"></i>
-                          )}
-                          {[...Array(5 - Math.ceil(product.rating))].map((_, i) => (
-                            <i key={i} className="fas fa-star text-gray-300 text-xl"></i>
-                          ))}
-                        </div>
-                        <span className="text-lg font-semibold ml-2">
-                          {product.rating.toFixed(1)}
-                        </span>
-                        <span className="text-gray-500 ml-2">
-                          ({product.reviewCount} {t("reviews")})
-                        </span>
-                      </div>
-                      
-                      {/* Sample reviews - in real app this would come from an API */}
-                      <div className="border-t pt-4">
-                        <p className="text-center text-gray-500">
-                          {t("view-all-reviews")}
-                        </p>
-                      </div>
-                    </>
-                  ) : (
-                    <p className="text-center text-gray-500 py-8">
-                      {t("no-reviews-yet")}
-                    </p>
-                  )}
+                <div className="py-4">
+                  <ReviewList productId={product.id} />
                 </div>
               </TabsContent>
             </Tabs>
@@ -468,6 +437,16 @@ const ProductDetail = () => {
               </div>
             </div>
           )}
+
+          {/* Sản phẩm đề xuất */}
+          <div className="mt-8">
+            <ProductRecommendations productId={product.id} type="similar" limit={6} />
+          </div>
+          
+          {/* Sản phẩm thường được mua cùng */}
+          <div className="mt-8">
+            <ProductRecommendations productId={product.id} type="frequently-bought" limit={4} />
+          </div>
         </div>
       </div>
     </>

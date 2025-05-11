@@ -11,7 +11,9 @@ import {
   X,
   Plus,
   Info,
-  Loader2
+  Loader2,
+  Check,
+  AlertTriangle
 } from 'lucide-react';
 import { useLanguage } from '@/hooks/useLanguage';
 import AdminLayout from '@/components/admin/layout/AdminLayout';
@@ -69,6 +71,8 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import { Badge } from "@/components/ui/badge";
+import { useTranslation } from 'react-i18next';
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 
 // Categories and brands will be fetched from the API
 
@@ -92,6 +96,8 @@ const productFormSchema = z.object({
   isNewArrival: z.boolean().default(false),
   isYapeeMall: z.boolean().default(false),
   freeShipping: z.boolean().default(false),
+  imageUrl: z.string().url('Please enter a valid image URL'),
+  isActive: z.boolean().default(true),
 });
 
 type ProductFormValues = z.infer<typeof productFormSchema>;
@@ -306,10 +312,11 @@ const VariantRow: React.FC<VariantRowProps> = ({
 };
 
 const ProductForm = () => {
-  const [location, navigate] = useLocation();
   const { t, language } = useLanguage();
-  const isEditMode = location.includes('/edit');
-  const productId = isEditMode ? parseInt(location.split('/').pop() || '0') : 0;
+  const { toast } = useToast();
+  const [location, navigate] = useLocation();
+  const { match, params } = useRoute('/admin/products/:id/edit');
+  const isEditing = match && params?.id !== 'new';
   
   const [images, setImages] = useState<string[]>([
     'https://images.unsplash.com/photo-1598327105666-5b89351aff97?auto=format&fit=crop&w=240&h=240',
@@ -318,6 +325,12 @@ const ProductForm = () => {
   const [variants, setVariants] = useState<ProductVariant[]>([]);
   const [showVariants, setShowVariants] = useState(false);
   const [leaveConfirmOpen, setLeaveConfirmOpen] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [savingStatus, setSavingStatus] = useState<'idle' | 'saving' | 'success' | 'error'>('idle');
+  const [categories, setCategories] = useState<Category[]>([]);
+  const [brands, setBrands] = useState<Brand[]>([]);
+  const [activeTab, setActiveTab] = useState('general');
+  const [imagePreview, setImagePreview] = useState<string | null>(null);
   
   // Sample attribute options
   const attributeOptions = {
@@ -329,24 +342,26 @@ const ProductForm = () => {
   const form = useForm<ProductFormValues>({
     resolver: zodResolver(productFormSchema),
     defaultValues: {
-      name: isEditMode ? 'Smartphone X Pro 128GB' : '',
-      nameEn: isEditMode ? 'Smartphone X Pro 128GB' : '',
-      nameZh: isEditMode ? 'Smartphone X Pro 128GB 智能手机' : '',
-      slug: isEditMode ? 'smartphone-x-pro-128gb' : '',
-      description: isEditMode ? 'Điện thoại thông minh cao cấp với hiệu năng mạnh mẽ' : '',
-      descriptionEn: isEditMode ? 'Premium smartphone with powerful performance' : '',
-      descriptionZh: isEditMode ? '高性能高端智能手机' : '',
-      price: isEditMode ? 2990000 : 0,
-      originalPrice: isEditMode ? 4990000 : 0,
-      stock: isEditMode ? 24 : 0,
-      categoryId: isEditMode ? '1' : '',
-      brandId: isEditMode ? '1' : '',
-      isFeatured: isEditMode ? true : false,
-      isHotDeal: isEditMode ? true : false,
-      isBestSeller: isEditMode ? false : false,
-      isNewArrival: isEditMode ? false : false,
-      isYapeeMall: isEditMode ? true : false,
-      freeShipping: isEditMode ? true : false,
+      name: isEditing ? 'Smartphone X Pro 128GB' : '',
+      nameEn: isEditing ? 'Smartphone X Pro 128GB' : '',
+      nameZh: isEditing ? 'Smartphone X Pro 128GB 智能手机' : '',
+      slug: isEditing ? 'smartphone-x-pro-128gb' : '',
+      description: isEditing ? 'Điện thoại thông minh cao cấp với hiệu năng mạnh mẽ' : '',
+      descriptionEn: isEditing ? 'Premium smartphone with powerful performance' : '',
+      descriptionZh: isEditing ? '高性能高端智能手机' : '',
+      price: isEditing ? 2990000 : 0,
+      originalPrice: isEditing ? 4990000 : null,
+      stock: isEditing ? 24 : 0,
+      categoryId: isEditing ? '1' : null,
+      brandId: isEditing ? '1' : null,
+      isFeatured: isEditing ? true : false,
+      isHotDeal: isEditing ? true : false,
+      isBestSeller: isEditing ? false : false,
+      isNewArrival: isEditing ? false : false,
+      isYapeeMall: isEditing ? true : false,
+      freeShipping: isEditing ? true : false,
+      imageUrl: isEditing ? 'https://example.com/image.jpg' : '',
+      isActive: isEditing ? true : false,
     },
   });
   
@@ -387,7 +402,6 @@ const ProductForm = () => {
   
   // Get query client for cache invalidation
   const queryClient = useQueryClient();
-  const { toast } = useToast();
   
   // Get categories data for dropdown
   const { data: categoriesData } = useQuery({
@@ -453,25 +467,48 @@ const ProductForm = () => {
     }
   });
   
-  const onSubmit = (values: ProductFormValues) => {
-    // Prepare product data
-    const productData = {
-      ...values,
-      slug: generateSlug(values.name),
-      imageUrl: images.length > 0 ? images[mainImageIndex] : '',
-      categoryId: values.categoryId ? parseInt(values.categoryId) : null,
-      brandId: values.brandId ? parseInt(values.brandId) : null,
-    };
-    
-    if (isEditMode && productId) {
-      // Update existing product
-      updateProductMutation.mutate({ 
-        id: parseInt(productId),
-        productData
+  const onSubmit = async (values: ProductFormValues) => {
+    try {
+      setSavingStatus('saving');
+      
+      // Prepare product data
+      const productData = {
+        ...values,
+        slug: generateSlug(values.name),
+        imageUrl: images.length > 0 ? images[mainImageIndex] : '',
+        categoryId: values.categoryId ? parseInt(values.categoryId) : null,
+        brandId: values.brandId ? parseInt(values.brandId) : null,
+      };
+      
+      if (isEditing && params.id) {
+        // Update existing product
+        updateProductMutation.mutate({ 
+          id: parseInt(params.id),
+          productData
+        });
+      } else {
+        // Create new product
+        createProductMutation.mutate(productData);
+      }
+      
+      setSavingStatus('success');
+      toast({
+        title: isEditing ? 'Product updated' : 'Product created',
+        description: `${values.name} has been ${isEditing ? 'updated' : 'created'} successfully`,
       });
-    } else {
-      // Create new product
-      createProductMutation.mutate(productData);
+      
+      // Redirect after a short delay
+      setTimeout(() => {
+        navigate('/admin/products');
+      }, 1500);
+    } catch (error) {
+      console.error('Error saving product:', error);
+      setSavingStatus('error');
+      toast({
+        title: 'Error',
+        description: 'An unexpected error occurred',
+        variant: 'destructive',
+      });
     }
   };
   
@@ -505,75 +542,210 @@ const ProductForm = () => {
     navigate('/admin/products');
   };
   
+  // Fetch product data if editing
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        setLoading(true);
+        
+        // Fetch categories and brands
+        const categoriesResponse = await apiRequest('GET', '/api/categories');
+        const brandsResponse = await apiRequest('GET', '/api/brands');
+        
+        if (categoriesResponse.ok) {
+          const categoriesData = await categoriesResponse.json();
+          setCategories(categoriesData);
+        }
+        
+        if (brandsResponse.ok) {
+          const brandsData = await brandsResponse.json();
+          setBrands(brandsData);
+        }
+        
+        // If editing, fetch product data
+        if (isEditing) {
+          const productResponse = await apiRequest('GET', `/api/admin/products/${params.id}`);
+          
+          if (productResponse.ok) {
+            const productData = await productResponse.json();
+            
+            // Reset form with product data
+            form.reset({
+              ...productData,
+              categoryId: productData.categoryId || null,
+              brandId: productData.brandId || null,
+              originalPrice: productData.originalPrice || null
+            });
+            
+            // Set image preview
+            setImagePreview(productData.imageUrl);
+          } else {
+            toast({
+              title: 'Error',
+              description: 'Failed to fetch product data',
+              variant: 'destructive',
+            });
+            navigate('/admin/products');
+          }
+        }
+      } catch (error) {
+        console.error('Error fetching data:', error);
+        toast({
+          title: 'Error',
+          description: 'An unexpected error occurred',
+          variant: 'destructive',
+        });
+      } finally {
+        setLoading(false);
+      }
+    };
+    
+    fetchData();
+  }, [isEditing, params?.id, navigate, toast, form]);
+  
+  // Auto-generate slug from name
+  useEffect(() => {
+    const subscription = form.watch((value, { name }) => {
+      if (name === 'name' && value.name && !form.getValues('slug')) {
+        const slug = value.name
+          .toLowerCase()
+          .replace(/[^\w\s-]/g, '')
+          .replace(/[\s_-]+/g, '-')
+          .replace(/^-+|-+$/g, '');
+        
+        form.setValue('slug', slug);
+      }
+    });
+    
+    return () => subscription.unsubscribe();
+  }, [form]);
+  
+  // Handle image URL change
+  useEffect(() => {
+    const subscription = form.watch((value, { name }) => {
+      if (name === 'imageUrl' && value.imageUrl) {
+        setImagePreview(value.imageUrl);
+      }
+    });
+    
+    return () => subscription.unsubscribe();
+  }, [form]);
+  
+  // Format currency
+  const formatCurrency = (price: number) => {
+    return new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(price);
+  };
+  
+  if (loading) {
+    return (
+      <AdminLayout>
+        <div className="flex flex-col items-center justify-center h-96">
+          <Loader2 className="h-8 w-8 animate-spin mb-4 text-primary" />
+          <p>{t('admin.products.loading')}</p>
+        </div>
+      </AdminLayout>
+    );
+  }
+  
   return (
     <AdminLayout>
       <div className="flex items-center justify-between mb-6">
         <div className="flex items-center gap-2">
           <Button 
-            variant="outline" 
-            size="icon"
-            onClick={() => setLeaveConfirmOpen(true)}
+            variant="ghost" 
+            size="sm" 
+            onClick={() => navigate('/admin/products')} 
+            className="gap-1"
           >
-            <ChevronLeft size={18} />
+            <ChevronLeft className="h-4 w-4" />
+            {t('admin.back')}
           </Button>
           <h1 className="text-2xl font-bold">
-            {isEditMode ? t('admin.editProduct') : t('admin.addProduct')}
+            {isEditing ? t('admin.products.editProduct') : t('admin.products.addProduct')}
           </h1>
         </div>
-        <div className="flex items-center gap-2">
-          <Button 
-            variant="outline" 
-            onClick={() => setLeaveConfirmOpen(true)}
-          >
-            {t('admin.cancel')}
-          </Button>
-          <Button
-            variant="default"
-            onClick={form.handleSubmit(onSubmit)}
-          >
-            <Save size={16} className="mr-2" />
-            {t('admin.saveProduct')}
-          </Button>
-        </div>
+        <Button 
+          onClick={form.handleSubmit(onSubmit)} 
+          disabled={savingStatus === 'saving' || savingStatus === 'success'}
+          className="gap-2"
+        >
+          {savingStatus === 'saving' ? (
+            <Loader2 className="h-4 w-4 animate-spin" />
+          ) : savingStatus === 'success' ? (
+            <Check className="h-4 w-4" />
+          ) : (
+            <Save className="h-4 w-4" />
+          )}
+          {savingStatus === 'saving' 
+            ? t('admin.saving') 
+            : savingStatus === 'success' 
+              ? t('admin.saved') 
+              : t('admin.save')}
+        </Button>
       </div>
       
+      {savingStatus === 'error' && (
+        <Alert variant="destructive" className="mb-6">
+          <AlertTriangle className="h-4 w-4" />
+          <AlertTitle>{t('admin.error')}</AlertTitle>
+          <AlertDescription>
+            {t('admin.products.errorSaving')}
+          </AlertDescription>
+        </Alert>
+      )}
+      
       <Form {...form}>
-        <form className="space-y-8">
+        <form className="space-y-6" onSubmit={form.handleSubmit(onSubmit)}>
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-            {/* Main content */}
+            {/* Main info */}
             <div className="lg:col-span-2 space-y-6">
               <Card>
                 <CardHeader>
-                  <CardTitle>{t('admin.basicInformation')}</CardTitle>
+                  <CardTitle>{t('admin.products.basicInfo')}</CardTitle>
+                  <CardDescription>
+                    {t('admin.products.basicInfoDescription')}
+                  </CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-4">
-                  <Tabs defaultValue="vi">
+                  <Tabs value={activeTab} onValueChange={setActiveTab}>
                     <TabsList className="mb-4">
-                      <TabsTrigger value="vi">Tiếng Việt</TabsTrigger>
-                      <TabsTrigger value="en">English</TabsTrigger>
-                      <TabsTrigger value="zh">中文</TabsTrigger>
+                      <TabsTrigger value="general">{t('admin.products.general')}</TabsTrigger>
+                      <TabsTrigger value="localization">{t('admin.products.localization')}</TabsTrigger>
                     </TabsList>
                     
-                    <TabsContent value="vi" className="space-y-4">
+                    <TabsContent value="general" className="space-y-4">
                       <FormField
                         control={form.control}
                         name="name"
                         render={({ field }) => (
                           <FormItem>
-                            <FormLabel>{t('admin.productName')} (VI) *</FormLabel>
+                            <FormLabel>{t('admin.products.name')} *</FormLabel>
                             <FormControl>
                               <Input 
+                                placeholder={t('admin.products.namePlaceholder')} 
                                 {...field} 
-                                placeholder="Tên sản phẩm"
-                                onChange={(e) => {
-                                  field.onChange(e);
-                                  // If slug is empty, generate from name
-                                  if (!form.getValues('slug')) {
-                                    form.setValue('slug', generateSlug(e.target.value));
-                                  }
-                                }}
                               />
                             </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                      
+                      <FormField
+                        control={form.control}
+                        name="slug"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>{t('admin.products.slug')}</FormLabel>
+                            <FormControl>
+                              <Input 
+                                placeholder={t('admin.products.slugPlaceholder')} 
+                                {...field} 
+                              />
+                            </FormControl>
+                            <FormDescription>
+                              {t('admin.products.slugDescription')}
+                            </FormDescription>
                             <FormMessage />
                           </FormItem>
                         )}
@@ -584,12 +756,12 @@ const ProductForm = () => {
                         name="description"
                         render={({ field }) => (
                           <FormItem>
-                            <FormLabel>{t('admin.description')} (VI)</FormLabel>
+                            <FormLabel>{t('admin.products.description')}</FormLabel>
                             <FormControl>
                               <Textarea 
-                                {...field} 
-                                placeholder="Mô tả sản phẩm" 
+                                placeholder={t('admin.products.descriptionPlaceholder')} 
                                 rows={5}
+                                {...field} 
                               />
                             </FormControl>
                             <FormMessage />
@@ -598,66 +770,36 @@ const ProductForm = () => {
                       />
                     </TabsContent>
                     
-                    <TabsContent value="en" className="space-y-4">
+                    <TabsContent value="localization" className="space-y-4">
                       <FormField
                         control={form.control}
                         name="nameEn"
                         render={({ field }) => (
                           <FormItem>
-                            <FormLabel>{t('admin.productName')} (EN) *</FormLabel>
+                            <FormLabel>{t('admin.products.nameEn')}</FormLabel>
                             <FormControl>
-                              <Input {...field} placeholder="Product name" />
-                            </FormControl>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
-                      
-                      <FormField
-                        control={form.control}
-                        name="descriptionEn"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel>{t('admin.description')} (EN)</FormLabel>
-                            <FormControl>
-                              <Textarea 
+                              <Input 
+                                placeholder={t('admin.products.nameEnPlaceholder')} 
                                 {...field} 
-                                placeholder="Product description" 
-                                rows={5}
+                                value={field.value || ''}
                               />
                             </FormControl>
                             <FormMessage />
                           </FormItem>
                         )}
                       />
-                    </TabsContent>
-                    
-                    <TabsContent value="zh" className="space-y-4">
+                      
                       <FormField
                         control={form.control}
                         name="nameZh"
                         render={({ field }) => (
                           <FormItem>
-                            <FormLabel>{t('admin.productName')} (ZH) *</FormLabel>
+                            <FormLabel>{t('admin.products.nameZh')}</FormLabel>
                             <FormControl>
-                              <Input {...field} placeholder="产品名称" />
-                            </FormControl>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
-                      
-                      <FormField
-                        control={form.control}
-                        name="descriptionZh"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel>{t('admin.description')} (ZH)</FormLabel>
-                            <FormControl>
-                              <Textarea 
+                              <Input 
+                                placeholder={t('admin.products.nameZhPlaceholder')} 
                                 {...field} 
-                                placeholder="产品描述" 
-                                rows={5}
+                                value={field.value || ''}
                               />
                             </FormControl>
                             <FormMessage />
@@ -666,131 +808,26 @@ const ProductForm = () => {
                       />
                     </TabsContent>
                   </Tabs>
-                  
-                  <FormField
-                    control={form.control}
-                    name="slug"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>{t('admin.slug')} *</FormLabel>
-                        <FormControl>
-                          <Input {...field} placeholder="product-slug" />
-                        </FormControl>
-                        <FormDescription>
-                          This will be used for the product URL. Use lowercase letters, numbers, and hyphens only.
-                        </FormDescription>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                  
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <FormField
-                      control={form.control}
-                      name="categoryId"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>{t('admin.category')} *</FormLabel>
-                          <Select
-                            value={field.value}
-                            onValueChange={field.onChange}
-                          >
-                            <FormControl>
-                              <SelectTrigger>
-                                <SelectValue placeholder="Select a category" />
-                              </SelectTrigger>
-                            </FormControl>
-                            <SelectContent>
-                              {categoriesData && categoriesData.length > 0 ? (
-                                categoriesData.map((category: any) => (
-                                  <SelectItem key={category.id} value={category.id.toString()}>
-                                    {language === 'vi' ? category.name : 
-                                     language === 'en' ? category.nameEn : 
-                                     category.nameZh}
-                                  </SelectItem>
-                                ))
-                              ) : (
-                                <SelectItem value="" disabled>
-                                  {t('admin.noCategories')}
-                                </SelectItem>
-                              )}
-                            </SelectContent>
-                          </Select>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                    
-                    <FormField
-                      control={form.control}
-                      name="brandId"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>{t('admin.brand')} *</FormLabel>
-                          <Select
-                            value={field.value}
-                            onValueChange={field.onChange}
-                          >
-                            <FormControl>
-                              <SelectTrigger>
-                                <SelectValue placeholder="Select a brand" />
-                              </SelectTrigger>
-                            </FormControl>
-                            <SelectContent>
-                              {brandsData && brandsData.length > 0 ? (
-                                brandsData.map((brand: any) => (
-                                  <SelectItem key={brand.id} value={brand.id.toString()}>
-                                    {brand.name}
-                                  </SelectItem>
-                                ))
-                              ) : (
-                                <SelectItem value="no-brand" disabled>
-                                  {t('admin.noBrands')}
-                                </SelectItem>
-                              )}
-                            </SelectContent>
-                          </Select>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                  </div>
                 </CardContent>
               </Card>
               
               <Card>
                 <CardHeader>
-                  <CardTitle>{t('admin.images')}</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <ImageUpload 
-                    onImageAdd={handleImageAdd}
-                    images={images}
-                    onRemove={handleImageRemove}
-                    mainImage={mainImageIndex}
-                    setMainImage={setMainImageIndex}
-                  />
-                </CardContent>
-              </Card>
-              
-              <Card>
-                <CardHeader>
-                  <CardTitle>{t('admin.pricingInventory')}</CardTitle>
+                  <CardTitle>{t('admin.products.pricing')}</CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-4">
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <FormField
                       control={form.control}
                       name="price"
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel>{t('admin.price')} *</FormLabel>
+                          <FormLabel>{t('admin.products.price')} *</FormLabel>
                           <FormControl>
                             <Input 
                               type="number" 
+                              placeholder="0" 
                               {...field} 
-                              placeholder="0"
-                              disabled={variants.length > 0}
                             />
                           </FormControl>
                           <FormMessage />
@@ -803,19 +840,145 @@ const ProductForm = () => {
                       name="originalPrice"
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel>{t('admin.originalPrice')}</FormLabel>
+                          <FormLabel>{t('admin.products.originalPrice')}</FormLabel>
                           <FormControl>
                             <Input 
                               type="number" 
+                              placeholder="0" 
                               {...field} 
-                              placeholder="0"
-                              disabled={variants.length > 0}
+                              value={field.value || ''}
+                              onChange={(e) => {
+                                const value = e.target.value ? Number(e.target.value) : null;
+                                field.onChange(value);
+                              }}
                             />
                           </FormControl>
                           <FormDescription>
-                            {t('admin.originalPriceDescription')}
+                            {t('admin.products.originalPriceDescription')}
                           </FormDescription>
                           <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                  </div>
+                  
+                  {/* Discount Display */}
+                  {form.watch('price') > 0 && form.watch('originalPrice') && form.watch('originalPrice') > form.watch('price') && (
+                    <div className="p-3 bg-slate-50 rounded-lg border border-slate-200">
+                      <div className="flex items-center justify-between">
+                        <span className="text-sm font-medium">{t('admin.products.discount')}</span>
+                        <Badge variant="secondary" className="bg-green-100 text-green-800">
+                          {Math.round(((Number(form.watch('originalPrice')) - Number(form.watch('price'))) / Number(form.watch('originalPrice')) * 100))}%
+                        </Badge>
+                      </div>
+                      <div className="flex items-center justify-between mt-2">
+                        <span className="text-sm text-gray-500">{t('admin.products.savings')}</span>
+                        <span className="text-green-600 font-medium">
+                          {formatCurrency(Number(form.watch('originalPrice')) - Number(form.watch('price')))}
+                        </span>
+                      </div>
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+              
+              <Card>
+                <CardHeader>
+                  <CardTitle>{t('admin.products.organization')}</CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <FormField
+                      control={form.control}
+                      name="categoryId"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>{t('admin.products.category')}</FormLabel>
+                          <Select
+                            value={field.value?.toString() || ''}
+                            onValueChange={(value) => {
+                              field.onChange(value ? Number(value) : null);
+                            }}
+                          >
+                            <FormControl>
+                              <SelectTrigger>
+                                <SelectValue placeholder={t('admin.products.selectCategory')} />
+                              </SelectTrigger>
+                            </FormControl>
+                            <SelectContent>
+                              <SelectItem value="">{t('admin.products.noCategory')}</SelectItem>
+                              {categories.map((category) => (
+                                <SelectItem key={category.id} value={category.id.toString()}>
+                                  {category.name}
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                    
+                    <FormField
+                      control={form.control}
+                      name="brandId"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>{t('admin.products.brand')}</FormLabel>
+                          <Select
+                            value={field.value?.toString() || ''}
+                            onValueChange={(value) => {
+                              field.onChange(value ? Number(value) : null);
+                            }}
+                          >
+                            <FormControl>
+                              <SelectTrigger>
+                                <SelectValue placeholder={t('admin.products.selectBrand')} />
+                              </SelectTrigger>
+                            </FormControl>
+                            <SelectContent>
+                              <SelectItem value="">{t('admin.products.noBrand')}</SelectItem>
+                              {brands.map((brand) => (
+                                <SelectItem key={brand.id} value={brand.id.toString()}>
+                                  {brand.name}
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
+            
+            {/* Side column */}
+            <div className="space-y-6">
+              <Card>
+                <CardHeader>
+                  <CardTitle>{t('admin.products.status')}</CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <div className="space-y-4">
+                    <FormField
+                      control={form.control}
+                      name="isActive"
+                      render={({ field }) => (
+                        <FormItem className="flex flex-row items-center justify-between rounded-lg border p-3">
+                          <div className="space-y-0.5">
+                            <FormLabel>{t('admin.products.active')}</FormLabel>
+                            <FormDescription>
+                              {t('admin.products.activeDescription')}
+                            </FormDescription>
+                          </div>
+                          <FormControl>
+                            <Switch
+                              checked={field.value}
+                              onCheckedChange={field.onChange}
+                            />
+                          </FormControl>
                         </FormItem>
                       )}
                     />
@@ -825,13 +988,12 @@ const ProductForm = () => {
                       name="stock"
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel>{t('admin.stock')} *</FormLabel>
+                          <FormLabel>{t('admin.products.stock')} *</FormLabel>
                           <FormControl>
                             <Input 
                               type="number" 
+                              placeholder="0" 
                               {...field} 
-                              placeholder="0"
-                              disabled={variants.length > 0}
                             />
                           </FormControl>
                           <FormMessage />
@@ -839,155 +1001,78 @@ const ProductForm = () => {
                       )}
                     />
                   </div>
-                  
-                  <div className="flex items-center justify-between border-t pt-4">
-                    <div>
-                      <h3 className="text-sm font-medium mb-1">{t('admin.productVariants')}</h3>
-                      <p className="text-sm text-gray-500">
-                        {t('admin.productVariantsDescription')}
-                      </p>
-                    </div>
-                    <div className="flex items-center gap-3">
-                      <span className="text-sm">{t('admin.enableVariants')}</span>
-                      <Switch
-                        checked={showVariants}
-                        onCheckedChange={setShowVariants}
-                      />
-                    </div>
-                  </div>
-                  
-                  {showVariants && (
-                    <div className="border rounded-md mt-4">
-                      <div className="p-3 border-b bg-gray-50">
-                        <h3 className="font-medium">{t('admin.variants')}</h3>
-                      </div>
-                      <div className="p-3 overflow-x-auto">
-                        <table className="w-full text-sm">
-                          <thead>
-                            <tr className="border-b">
-                              <th className="text-left py-2.5 px-2 font-medium">Color</th>
-                              <th className="text-left py-2.5 px-2 font-medium">Size</th>
-                              <th className="text-left py-2.5 px-2 font-medium">SKU</th>
-                              <th className="text-left py-2.5 px-2 font-medium">Price</th>
-                              <th className="text-left py-2.5 px-2 font-medium">Stock</th>
-                              <th className="text-center py-2.5 px-2 font-medium">Actions</th>
-                            </tr>
-                          </thead>
-                          <tbody>
-                            {variants.map((variant, index) => (
-                              <VariantRow
-                                key={index}
-                                index={index}
-                                variant={variant}
-                                onUpdate={handleUpdateVariant}
-                                onRemove={handleRemoveVariant}
-                                attributeOptions={attributeOptions}
-                              />
-                            ))}
-                            {variants.length === 0 && (
-                              <tr>
-                                <td colSpan={6} className="py-4 text-center text-gray-500">
-                                  No variants added yet. Add your first variant below.
-                                </td>
-                              </tr>
-                            )}
-                          </tbody>
-                        </table>
-                        <div className="mt-3">
-                          <Button
-                            type="button"
-                            variant="outline"
-                            size="sm"
-                            onClick={handleAddVariant}
-                          >
-                            <Plus size={14} className="mr-1" />
-                            Add Variant
-                          </Button>
-                        </div>
-                      </div>
-                    </div>
-                  )}
-                </CardContent>
-              </Card>
-            </div>
-            
-            {/* Sidebar */}
-            <div className="space-y-6">
-              <Card>
-                <CardHeader>
-                  <CardTitle>{t('admin.status')}</CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  <FormField
-                    control={form.control}
-                    name="freeShipping"
-                    render={({ field }) => (
-                      <FormItem className="flex flex-row items-center justify-between rounded-lg border p-3">
-                        <div className="space-y-0.5">
-                          <FormLabel>{t('admin.freeShipping')}</FormLabel>
-                          <FormDescription>
-                            {t('admin.freeShippingDescription')}
-                          </FormDescription>
-                        </div>
-                        <FormControl>
-                          <Switch
-                            checked={field.value}
-                            onCheckedChange={field.onChange}
-                          />
-                        </FormControl>
-                      </FormItem>
-                    )}
-                  />
                 </CardContent>
               </Card>
               
               <Card>
                 <CardHeader>
-                  <CardTitle>{t('admin.productFlags')}</CardTitle>
+                  <CardTitle>{t('admin.products.image')}</CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-4">
                   <FormField
                     control={form.control}
-                    name="isYapeeMall"
+                    name="imageUrl"
                     render={({ field }) => (
-                      <FormItem className="flex flex-row items-center justify-between rounded-lg border p-3">
-                        <div className="space-y-0.5">
-                          <div className="flex items-center gap-2">
-                            <FormLabel>{t('admin.yapeeMall')}</FormLabel>
-                            <TooltipProvider>
-                              <Tooltip>
-                                <TooltipTrigger asChild>
-                                  <Info size={14} className="text-gray-500" />
-                                </TooltipTrigger>
-                                <TooltipContent>
-                                  <p>100% Authentic Brands / 100% Thương hiệu chính hãng / 100%正品品牌</p>
-                                </TooltipContent>
-                              </Tooltip>
-                            </TooltipProvider>
-                          </div>
-                          <FormDescription>
-                            {t('admin.yapeeMallDescription')}
-                          </FormDescription>
-                        </div>
+                      <FormItem>
+                        <FormLabel>{t('admin.products.imageUrl')} *</FormLabel>
                         <FormControl>
-                          <Switch
-                            checked={field.value}
-                            onCheckedChange={field.onChange}
+                          <Input 
+                            placeholder="https://example.com/image.jpg" 
+                            {...field} 
                           />
                         </FormControl>
+                        <FormMessage />
                       </FormItem>
                     )}
                   />
                   
+                  {/* Image Preview */}
+                  {imagePreview && (
+                    <div className="mt-4 relative">
+                      <div className="aspect-square rounded-md overflow-hidden border bg-gray-50">
+                        <img
+                          src={imagePreview}
+                          alt="Product preview"
+                          className="w-full h-full object-cover"
+                          onError={() => {
+                            setImagePreview('/placeholder-image.jpg');
+                          }}
+                        />
+                      </div>
+                      <Button
+                        variant="destructive"
+                        size="icon"
+                        className="absolute top-2 right-2 h-6 w-6"
+                        onClick={() => {
+                          form.setValue('imageUrl', '');
+                          setImagePreview(null);
+                        }}
+                      >
+                        <X className="h-4 w-4" />
+                      </Button>
+                    </div>
+                  )}
+                  
+                  <FormDescription>
+                    {t('admin.products.imageUrlDescription')}
+                  </FormDescription>
+                </CardContent>
+              </Card>
+              
+              <Card>
+                <CardHeader>
+                  <CardTitle>{t('admin.products.flags')}</CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-4">
                   <FormField
                     control={form.control}
                     name="isFeatured"
                     render={({ field }) => (
                       <FormItem className="flex flex-row items-center justify-between rounded-lg border p-3">
                         <div className="space-y-0.5">
-                          <FormLabel>{t('admin.featured')}</FormLabel>
+                          <FormLabel>{t('admin.products.featured')}</FormLabel>
                           <FormDescription>
-                            {t('admin.featuredDescription')}
+                            {t('admin.products.featuredDescription')}
                           </FormDescription>
                         </div>
                         <FormControl>
@@ -1006,9 +1091,9 @@ const ProductForm = () => {
                     render={({ field }) => (
                       <FormItem className="flex flex-row items-center justify-between rounded-lg border p-3">
                         <div className="space-y-0.5">
-                          <FormLabel>{t('admin.hotDeal')}</FormLabel>
+                          <FormLabel>{t('admin.products.hotDeal')}</FormLabel>
                           <FormDescription>
-                            {t('admin.hotDealDescription')}
+                            {t('admin.products.hotDealDescription')}
                           </FormDescription>
                         </div>
                         <FormControl>
@@ -1027,9 +1112,9 @@ const ProductForm = () => {
                     render={({ field }) => (
                       <FormItem className="flex flex-row items-center justify-between rounded-lg border p-3">
                         <div className="space-y-0.5">
-                          <FormLabel>{t('admin.bestSeller')}</FormLabel>
+                          <FormLabel>{t('admin.products.bestSeller')}</FormLabel>
                           <FormDescription>
-                            {t('admin.bestSellerDescription')}
+                            {t('admin.products.bestSellerDescription')}
                           </FormDescription>
                         </div>
                         <FormControl>
@@ -1048,9 +1133,9 @@ const ProductForm = () => {
                     render={({ field }) => (
                       <FormItem className="flex flex-row items-center justify-between rounded-lg border p-3">
                         <div className="space-y-0.5">
-                          <FormLabel>{t('admin.newArrival')}</FormLabel>
+                          <FormLabel>{t('admin.products.newArrival')}</FormLabel>
                           <FormDescription>
-                            {t('admin.newArrivalDescription')}
+                            {t('admin.products.newArrivalDescription')}
                           </FormDescription>
                         </div>
                         <FormControl>
@@ -1066,26 +1151,29 @@ const ProductForm = () => {
               </Card>
             </div>
           </div>
+          
+          <div className="flex justify-end">
+            <Button 
+              type="submit" 
+              disabled={savingStatus === 'saving' || savingStatus === 'success'}
+              className="gap-2"
+            >
+              {savingStatus === 'saving' ? (
+                <Loader2 className="h-4 w-4 animate-spin" />
+              ) : savingStatus === 'success' ? (
+                <Check className="h-4 w-4" />
+              ) : (
+                <Save className="h-4 w-4" />
+              )}
+              {savingStatus === 'saving' 
+                ? t('admin.saving') 
+                : savingStatus === 'success' 
+                  ? t('admin.saved') 
+                  : t('admin.save')}
+            </Button>
+          </div>
         </form>
       </Form>
-      
-      {/* Leave confirmation dialog */}
-      <AlertDialog open={leaveConfirmOpen} onOpenChange={setLeaveConfirmOpen}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>{t('admin.unsavedChanges')}</AlertDialogTitle>
-            <AlertDialogDescription>
-              {t('admin.unsavedChangesDescription')}
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel>{t('admin.cancel')}</AlertDialogCancel>
-            <AlertDialogAction onClick={handleLeave}>
-              {t('admin.leave')}
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
     </AdminLayout>
   );
 };

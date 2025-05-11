@@ -1,7 +1,7 @@
 import { Helmet } from "react-helmet";
 import { useLanguage } from "@/hooks/useLanguage";
 import HeroBanner from "@/components/home/HeroBanner";
-import YapeeMall from "@/components/home/YapeeMall";
+import { YapeeMall } from "@/components/home/YapeeMall";
 import FlashDeals from "@/components/home/FlashDeals";
 import FeaturedCategories from "@/components/home/FeaturedCategories";
 import ProductListings from "@/components/home/ProductListings";

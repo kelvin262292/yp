@@ -12,6 +12,7 @@ export const users = pgTable("users", {
   email: text("email"),
   phone: text("phone"),
   address: text("address"),
+  role: text("role").notNull().default("user"),
   createdAt: timestamp("created_at").defaultNow(),
 });
 
@@ -87,6 +88,34 @@ export const flashDeals = pgTable("flash_deals", {
   soldCount: integer("sold_count").default(0),
 });
 
+// Discount code schema
+export const discountCodes = pgTable("discount_codes", {
+  id: serial("id").primaryKey(),
+  code: text("code").notNull().unique(),
+  description: text("description"),
+  discountType: text("discount_type").notNull(), // percentage, fixed_amount
+  discountValue: real("discount_value").notNull(),
+  minOrderValue: real("min_order_value").default(0),
+  maxDiscountAmount: real("max_discount_amount"),
+  startDate: timestamp("start_date").notNull(),
+  endDate: timestamp("end_date").notNull(),
+  isActive: boolean("is_active").default(true),
+  usageLimit: integer("usage_limit"),
+  usageCount: integer("usage_count").default(0),
+  isOneTimeUse: boolean("is_one_time_use").default(false),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+// User discount usage schema (for tracking user-specific discount usage)
+export const userDiscountUsage = pgTable("user_discount_usage", {
+  id: serial("id").primaryKey(),
+  userId: integer("user_id").references(() => users.id).notNull(),
+  discountCodeId: integer("discount_code_id").references(() => discountCodes.id).notNull(),
+  orderId: integer("order_id").references(() => orders.id).notNull(),
+  usedAt: timestamp("used_at").defaultNow(),
+});
+
 // Banner schema
 export const banners = pgTable("banners", {
   id: serial("id").primaryKey(),
@@ -102,9 +131,91 @@ export const banners = pgTable("banners", {
   position: integer("position").default(0),
 });
 
+// Order schema
+export const orders = pgTable("orders", {
+  id: serial("id").primaryKey(),
+  userId: integer("user_id").references(() => users.id),
+  status: text("status").notNull().default("pending"),
+  totalAmount: real("total_amount").notNull(),
+  shippingAddress: text("shipping_address"),
+  shippingCity: text("shipping_city"),
+  shippingProvince: text("shipping_province"),
+  shippingPostalCode: text("shipping_postal_code"),
+  shippingPhone: text("shipping_phone"),
+  shippingName: text("shipping_name"),
+  paymentMethod: text("payment_method").notNull(),
+  paymentStatus: text("payment_status").notNull().default("pending"),
+  paymentIntentId: text("payment_intent_id"),
+  notes: text("notes"),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+// Order item schema
+export const orderItems = pgTable("order_items", {
+  id: serial("id").primaryKey(),
+  orderId: integer("order_id").references(() => orders.id).notNull(),
+  productId: integer("product_id").references(() => products.id).notNull(),
+  quantity: integer("quantity").notNull(),
+  price: real("price").notNull(),
+  name: text("name").notNull(),
+  imageUrl: text("image_url"),
+});
+
+// Review schema
+export const reviews = pgTable("reviews", {
+  id: serial("id").primaryKey(),
+  productId: integer("product_id").references(() => products.id).notNull(),
+  userId: integer("user_id").references(() => users.id).notNull(),
+  rating: integer("rating").notNull(),
+  comment: text("comment"),
+  title: text("title"),
+  isVerifiedPurchase: boolean("is_verified_purchase").default(false),
+  isApproved: boolean("is_approved").default(true),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+// Settings schema
+export const settings = pgTable("settings", {
+  id: serial("id").primaryKey(),
+  key: text("key").notNull().unique(),
+  value: jsonb("value"),
+  group: text("group").notNull().default("general"),
+  description: text("description"),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+// Campaigns schema
+export const campaigns = pgTable("campaigns", {
+  id: serial("id").primaryKey(),
+  name: text("name").notNull(),
+  description: text("description"),
+  startDate: timestamp("start_date").notNull(),
+  endDate: timestamp("end_date").notNull(),
+  isActive: boolean("is_active").default(true),
+  type: text("type").notNull(), // promotion, seasonal, holiday, flash_sale, clearance, etc.
+  bannerUrl: text("banner_url"),
+  targetAudience: text("target_audience"), // all, new_customers, returning_customers, etc.
+  discountType: text("discount_type"), // percentage, fixed_amount
+  discountValue: real("discount_value"),
+  minOrderValue: real("min_order_value").default(0),
+  maxDiscountAmount: real("max_discount_amount"),
+  discountCode: text("discount_code"),
+  productsIncluded: text("products_included").array(), // Array of product IDs
+  categoriesIncluded: text("categories_included").array(), // Array of category IDs
+  brandsIncluded: text("brands_included").array(), // Array of brand IDs
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
 // Relationship definitions
 export const usersRelations = relations(users, ({ many }) => ({
   carts: many(carts),
+  orders: many(orders),
+  reviews: many(reviews),
+  discountUsage: many(userDiscountUsage),
 }));
 
 export const categoriesRelations = relations(categories, ({ many, one }) => ({
@@ -133,7 +244,9 @@ export const productsRelations = relations(products, ({ one, many }) => ({
     references: [brands.id],
   }),
   cartItems: many(cartItems),
+  orderItems: many(orderItems),
   flashDeals: many(flashDeals),
+  reviews: many(reviews),
 }));
 
 export const cartsRelations = relations(carts, ({ one, many }) => ({
@@ -155,11 +268,65 @@ export const cartItemsRelations = relations(cartItems, ({ one }) => ({
   }),
 }));
 
+export const ordersRelations = relations(orders, ({ one, many }) => ({
+  user: one(users, {
+    fields: [orders.userId],
+    references: [users.id],
+  }),
+  items: many(orderItems),
+  discountUsage: many(userDiscountUsage),
+}));
+
+export const orderItemsRelations = relations(orderItems, ({ one }) => ({
+  order: one(orders, {
+    fields: [orderItems.orderId],
+    references: [orders.id],
+  }),
+  product: one(products, {
+    fields: [orderItems.productId],
+    references: [products.id],
+  }),
+}));
+
 export const flashDealsRelations = relations(flashDeals, ({ one }) => ({
   product: one(products, {
     fields: [flashDeals.productId],
     references: [products.id],
   }),
+}));
+
+export const reviewsRelations = relations(reviews, ({ one }) => ({
+  product: one(products, {
+    fields: [reviews.productId],
+    references: [products.id],
+  }),
+  user: one(users, {
+    fields: [reviews.userId],
+    references: [users.id],
+  }),
+}));
+
+export const discountCodesRelations = relations(discountCodes, ({ many }) => ({
+  usages: many(userDiscountUsage),
+}));
+
+export const userDiscountUsageRelations = relations(userDiscountUsage, ({ one }) => ({
+  user: one(users, {
+    fields: [userDiscountUsage.userId],
+    references: [users.id],
+  }),
+  discountCode: one(discountCodes, {
+    fields: [userDiscountUsage.discountCodeId],
+    references: [discountCodes.id],
+  }),
+  order: one(orders, {
+    fields: [userDiscountUsage.orderId],
+    references: [orders.id],
+  }),
+}));
+
+export const campaignsRelations = relations(campaigns, ({ many }) => ({
+  // Relations can be added here when needed
 }));
 
 // Zod schemas
@@ -170,6 +337,7 @@ export const insertUserSchema = createInsertSchema(users).pick({
   email: true,
   phone: true,
   address: true,
+  role: true,
 });
 
 export const insertCategorySchema = createInsertSchema(categories).pick({
@@ -180,6 +348,8 @@ export const insertCategorySchema = createInsertSchema(categories).pick({
   icon: true,
   parentId: true,
 });
+
+export const updateCategorySchema = insertCategorySchema.partial();
 
 export const insertProductSchema = createInsertSchema(products).pick({
   name: true,
@@ -204,6 +374,8 @@ export const insertProductSchema = createInsertSchema(products).pick({
   freeShipping: true,
 });
 
+export const updateProductSchema = insertProductSchema.partial();
+
 export const insertCartSchema = createInsertSchema(carts).pick({
   userId: true,
   sessionId: true,
@@ -220,6 +392,8 @@ export const insertBrandSchema = createInsertSchema(brands).pick({
   logoUrl: true,
   isFeatured: true,
 });
+
+export const updateBrandSchema = insertBrandSchema.partial();
 
 export const insertFlashDealSchema = createInsertSchema(flashDeals).pick({
   productId: true,
@@ -240,6 +414,87 @@ export const insertBannerSchema = createInsertSchema(banners).pick({
   linkUrl: true,
   isActive: true,
   position: true,
+});
+
+export const insertOrderSchema = createInsertSchema(orders).pick({
+  userId: true,
+  status: true,
+  totalAmount: true,
+  shippingAddress: true,
+  shippingCity: true,
+  shippingProvince: true,
+  shippingPostalCode: true,
+  shippingPhone: true,
+  shippingName: true,
+  paymentMethod: true,
+  paymentStatus: true,
+  paymentIntentId: true,
+  notes: true,
+});
+
+export const insertOrderItemSchema = createInsertSchema(orderItems).pick({
+  orderId: true,
+  productId: true,
+  quantity: true,
+  price: true,
+  name: true,
+  imageUrl: true,
+});
+
+export const insertReviewSchema = createInsertSchema(reviews).pick({
+  productId: true,
+  userId: true,
+  rating: true,
+  comment: true,
+  title: true,
+  isVerifiedPurchase: true,
+  isApproved: true,
+});
+
+export const insertDiscountCodeSchema = createInsertSchema(discountCodes).pick({
+  code: true,
+  description: true,
+  discountType: true,
+  discountValue: true,
+  minOrderValue: true,
+  maxDiscountAmount: true,
+  startDate: true,
+  endDate: true,
+  isActive: true,
+  usageLimit: true,
+  isOneTimeUse: true,
+});
+
+export const insertUserDiscountUsageSchema = createInsertSchema(userDiscountUsage).pick({
+  userId: true,
+  discountCodeId: true,
+  orderId: true,
+});
+
+export const insertSettingsSchema = createInsertSchema(settings).pick({
+  key: true,
+  value: true,
+  group: true,
+  description: true,
+});
+
+export const insertCampaignSchema = createInsertSchema(campaigns).pick({
+  name: true,
+  description: true,
+  startDate: true,
+  endDate: true,
+  isActive: true,
+  type: true,
+  bannerUrl: true,
+  targetAudience: true,
+  discountType: true,
+  discountValue: true,
+  minOrderValue: true,
+  maxDiscountAmount: true,
+  discountCode: true,
+  productsIncluded: true,
+  categoriesIncluded: true,
+  brandsIncluded: true,
 });
 
 // Types
@@ -266,3 +521,24 @@ export type InsertFlashDeal = z.infer<typeof insertFlashDealSchema>;
 
 export type Banner = typeof banners.$inferSelect;
 export type InsertBanner = z.infer<typeof insertBannerSchema>;
+
+export type Order = typeof orders.$inferSelect;
+export type InsertOrder = z.infer<typeof insertOrderSchema>;
+
+export type OrderItem = typeof orderItems.$inferSelect;
+export type InsertOrderItem = z.infer<typeof insertOrderItemSchema>;
+
+export type Review = typeof reviews.$inferSelect;
+export type InsertReview = z.infer<typeof insertReviewSchema>;
+
+export type DiscountCode = typeof discountCodes.$inferSelect;
+export type InsertDiscountCode = z.infer<typeof insertDiscountCodeSchema>;
+
+export type UserDiscountUsage = typeof userDiscountUsage.$inferSelect;
+export type InsertUserDiscountUsage = z.infer<typeof insertUserDiscountUsageSchema>;
+
+export type Settings = typeof settings.$inferSelect;
+export type InsertSettings = z.infer<typeof insertSettingsSchema>;
+
+export type Campaign = typeof campaigns.$inferSelect;
+export type InsertCampaign = z.infer<typeof insertCampaignSchema>;

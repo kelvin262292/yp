@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link } from 'wouter';
 import { 
   Search, 
@@ -9,7 +9,9 @@ import {
   FileText, 
   Printer,
   Download,
-  RefreshCw
+  RefreshCw,
+  ChevronLeft,
+  ChevronRight
 } from 'lucide-react';
 import { useLanguage } from '@/hooks/useLanguage';
 import AdminLayout from '@/components/admin/layout/AdminLayout';
@@ -17,7 +19,8 @@ import {
   Card, 
   CardContent, 
   CardHeader, 
-  CardTitle 
+  CardTitle,
+  CardDescription 
 } from '@/components/ui/card';
 import { 
   DropdownMenu,
@@ -52,122 +55,62 @@ import {
   TabsList,
   TabsTrigger,
 } from "@/components/ui/tabs";
+import axios from 'axios';
+import { toast } from 'sonner';
+import Spinner from '@/components/ui/spinner';
+import EmptyState from '@/components/ui/empty-state';
 
-// Sample orders data for demonstration
-const orders = [
-  {
-    id: 'YP1234',
-    customer: {
-      name: 'Nguyễn Văn A',
-      email: 'nguyenvana@example.com',
-      phone: '0912345678'
-    },
-    date: new Date('2023-05-01'),
-    status: 'processing',
-    total: 1299000,
-    paymentMethod: 'cod',
-    paymentStatus: 'pending',
-    items: 3
-  },
-  {
-    id: 'YP1235',
-    customer: {
-      name: 'Trần Thị B',
-      email: 'tranthib@example.com',
-      phone: '0923456789'
-    },
-    date: new Date('2023-05-01'),
-    status: 'processing',
-    total: 599000,
-    paymentMethod: 'bank-transfer',
-    paymentStatus: 'paid',
-    items: 1
-  },
-  {
-    id: 'YP1236',
-    customer: {
-      name: 'Lê Văn C',
-      email: 'levanc@example.com',
-      phone: '0934567890'
-    },
-    date: new Date('2023-05-02'),
-    status: 'delivered',
-    total: 189000,
-    paymentMethod: 'momo',
-    paymentStatus: 'paid',
-    items: 2
-  },
-  {
-    id: 'YP1237',
-    customer: {
-      name: 'Phạm Thị D',
-      email: 'phamthid@example.com',
-      phone: '0945678901'
-    },
-    date: new Date('2023-05-03'),
-    status: 'pending',
-    total: 2450000,
-    paymentMethod: 'cod',
-    paymentStatus: 'pending',
-    items: 4
-  },
-  {
-    id: 'YP1238',
-    customer: {
-      name: 'Hoàng Văn E',
-      email: 'hoangvane@example.com',
-      phone: '0956789012'
-    },
-    date: new Date('2023-05-03'),
-    status: 'cancelled',
-    total: 799000,
-    paymentMethod: 'vnpay',
-    paymentStatus: 'refunded',
-    items: 1
-  },
-  {
-    id: 'YP1239',
-    customer: {
-      name: 'Vũ Thị F',
-      email: 'vuthif@example.com',
-      phone: '0967890123'
-    },
-    date: new Date('2023-05-04'),
-    status: 'delivered',
-    total: 4750000,
-    paymentMethod: 'bank-transfer',
-    paymentStatus: 'paid',
-    items: 6
-  },
-  {
-    id: 'YP1240',
-    customer: {
-      name: 'Đặng Văn G',
-      email: 'dangvang@example.com',
-      phone: '0978901234'
-    },
-    date: new Date('2023-05-04'),
-    status: 'shipping',
-    total: 349000,
-    paymentMethod: 'momo',
-    paymentStatus: 'paid',
-    items: 1
-  },
-  {
-    id: 'YP1241',
-    customer: {
-      name: 'Bùi Thị H',
-      email: 'buithih@example.com',
-      phone: '0989012345'
-    },
-    date: new Date('2023-05-05'),
-    status: 'shipping',
-    total: 1670000,
-    paymentMethod: 'cod',
-    paymentStatus: 'pending',
-    items: 3
-  }
-];
+// Types
+interface Customer {
+  id: number;
+  username: string;
+  fullName: string;
+  email: string;
+}
+
+interface OrderItem {
+  id: number;
+  orderId: number;
+  productId: number;
+  quantity: number;
+  price: number;
+  product: {
+    id: number;
+    name: string;
+    slug: string;
+    image: string;
+  };
+}
+
+interface Order {
+  id: number;
+  userId: number;
+  status: string;
+  totalAmount: number;
+  shippingAddress: string;
+  shippingCity: string;
+  shippingProvince: string;
+  shippingPhone: string;
+  shippingName: string;
+  paymentMethod: string;
+  paymentStatus: string;
+  notes: string;
+  createdAt: string;
+  updatedAt: string;
+  user: Customer;
+  orderItems: OrderItem[];
+}
+
+interface PaginationInfo {
+  currentPage: number;
+  totalPages: number;
+  totalItems: number;
+  itemsPerPage: number;
+}
+
+interface StatusCounts {
+  [key: string]: number;
+}
 
 // Currency formatter
 const formatPrice = (price: number) => {
@@ -176,423 +119,472 @@ const formatPrice = (price: number) => {
 
 // Status badge component
 const OrderStatusBadge = ({ status }: { status: string }) => {
-  switch (status) {
-    case 'pending':
-      return <Badge variant="outline" className="bg-yellow-50 text-yellow-700 border-yellow-200">Pending</Badge>;
-    case 'processing':
-      return <Badge variant="outline" className="bg-blue-50 text-blue-700 border-blue-200">Processing</Badge>;
-    case 'shipping':
-      return <Badge variant="outline" className="bg-indigo-50 text-indigo-700 border-indigo-200">Shipping</Badge>;
-    case 'delivered':
-      return <Badge variant="outline" className="bg-green-50 text-green-700 border-green-200">Delivered</Badge>;
-    case 'cancelled':
-      return <Badge variant="outline" className="bg-red-50 text-red-700 border-red-200">Cancelled</Badge>;
-    default:
-      return <Badge variant="outline">{status}</Badge>;
-  }
+  const statuses: Record<string, { label: string, className: string }> = {
+    'pending': { label: 'Chờ xử lý', className: 'bg-yellow-50 text-yellow-700 border-yellow-200' },
+    'processing': { label: 'Đang xử lý', className: 'bg-blue-50 text-blue-700 border-blue-200' },
+    'shipping': { label: 'Đang giao', className: 'bg-indigo-50 text-indigo-700 border-indigo-200' },
+    'delivered': { label: 'Đã giao', className: 'bg-green-50 text-green-700 border-green-200' },
+    'cancelled': { label: 'Đã hủy', className: 'bg-red-50 text-red-700 border-red-200' },
+  };
+
+  const statusInfo = statuses[status] || { label: status, className: '' };
+  
+  return (
+    <Badge variant="outline" className={statusInfo.className}>
+      {statusInfo.label}
+    </Badge>
+  );
 };
 
 // Payment status badge component
 const PaymentStatusBadge = ({ status }: { status: string }) => {
-  switch (status) {
-    case 'paid':
-      return <Badge variant="outline" className="bg-green-50 text-green-700 border-green-200">Paid</Badge>;
-    case 'pending':
-      return <Badge variant="outline" className="bg-yellow-50 text-yellow-700 border-yellow-200">Pending</Badge>;
-    case 'refunded':
-      return <Badge variant="outline" className="bg-purple-50 text-purple-700 border-purple-200">Refunded</Badge>;
-    case 'failed':
-      return <Badge variant="outline" className="bg-red-50 text-red-700 border-red-200">Failed</Badge>;
-    default:
-      return <Badge variant="outline">{status}</Badge>;
-  }
+  const statuses: Record<string, { label: string, className: string }> = {
+    'paid': { label: 'Đã thanh toán', className: 'bg-green-50 text-green-700 border-green-200' },
+    'pending': { label: 'Chờ thanh toán', className: 'bg-yellow-50 text-yellow-700 border-yellow-200' },
+    'refunded': { label: 'Đã hoàn tiền', className: 'bg-purple-50 text-purple-700 border-purple-200' },
+    'failed': { label: 'Thất bại', className: 'bg-red-50 text-red-700 border-red-200' },
+  };
+
+  const statusInfo = statuses[status] || { label: status, className: '' };
+  
+  return (
+    <Badge variant="outline" className={statusInfo.className}>
+      {statusInfo.label}
+    </Badge>
+  );
 };
 
 // Payment method badge component
 const PaymentMethodBadge = ({ method }: { method: string }) => {
-  switch (method) {
-    case 'cod':
-      return <Badge variant="outline" className="border-gray-200">COD</Badge>;
-    case 'bank-transfer':
-      return <Badge variant="outline" className="border-gray-200">Bank Transfer</Badge>;
-    case 'momo':
-      return <Badge variant="outline" className="border-gray-200">MoMo</Badge>;
-    case 'vnpay':
-      return <Badge variant="outline" className="border-gray-200">VNPay</Badge>;
-    case 'credit-card':
-      return <Badge variant="outline" className="border-gray-200">Credit Card</Badge>;
-    default:
-      return <Badge variant="outline">{method}</Badge>;
-  }
+  const methods: Record<string, { label: string }> = {
+    'cod': { label: 'COD' },
+    'bank-transfer': { label: 'Chuyển khoản' },
+    'momo': { label: 'MoMo' },
+    'vnpay': { label: 'VNPay' },
+    'credit-card': { label: 'Thẻ tín dụng' },
+  };
+
+  const methodInfo = methods[method] || { label: method };
+  
+  return (
+    <Badge variant="outline" className="border-gray-200">
+      {methodInfo.label}
+    </Badge>
+  );
 };
 
 const OrderList = () => {
   const { t } = useLanguage();
+  const [orders, setOrders] = useState<Order[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  
+  // Filters and pagination
   const [searchQuery, setSearchQuery] = useState('');
-  const [selectedStatus, setSelectedStatus] = useState('');
-  const [selectedPaymentStatus, setSelectedPaymentStatus] = useState('');
-  const [selectedPaymentMethod, setSelectedPaymentMethod] = useState('');
-  const [selectedDateFrom, setSelectedDateFrom] = useState<Date | undefined>(undefined);
-  const [selectedDateTo, setSelectedDateTo] = useState<Date | undefined>(undefined);
-  const [showFilters, setShowFilters] = useState(false);
-  const [selectedOrders, setSelectedOrders] = useState<string[]>([]);
-  const [allSelected, setAllSelected] = useState(false);
-  const [activeTab, setActiveTab] = useState('all');
-  
-  // Filter orders based on tab and filters
-  const filteredOrders = orders.filter(order => {
-    // Tab filtering
-    if (activeTab !== 'all' && order.status !== activeTab) return false;
-    
-    // Search filtering
-    if (
-      searchQuery && 
-      !order.id.toLowerCase().includes(searchQuery.toLowerCase()) &&
-      !order.customer.name.toLowerCase().includes(searchQuery.toLowerCase()) &&
-      !order.customer.email.toLowerCase().includes(searchQuery.toLowerCase()) &&
-      !order.customer.phone.toLowerCase().includes(searchQuery.toLowerCase())
-    ) {
-      return false;
-    }
-    
-    // Status filtering
-    if (selectedStatus && order.status !== selectedStatus) return false;
-    
-    // Payment status filtering
-    if (selectedPaymentStatus && order.paymentStatus !== selectedPaymentStatus) return false;
-    
-    // Payment method filtering
-    if (selectedPaymentMethod && order.paymentMethod !== selectedPaymentMethod) return false;
-    
-    // Date filtering
-    if (selectedDateFrom && new Date(order.date) < selectedDateFrom) return false;
-    if (selectedDateTo) {
-      const dateTo = new Date(selectedDateTo);
-      dateTo.setHours(23, 59, 59, 999); // End of day
-      if (new Date(order.date) > dateTo) return false;
-    }
-    
-    return true;
+  const [currentPage, setCurrentPage] = useState(1);
+  const [paginationInfo, setPaginationInfo] = useState<PaginationInfo>({
+    currentPage: 1,
+    totalPages: 1,
+    totalItems: 0,
+    itemsPerPage: 10
   });
+  const [statusCounts, setStatusCounts] = useState<StatusCounts>({});
+  const [activeTab, setActiveTab] = useState('all');
+  const [sortBy, setSortBy] = useState('createdAt');
+  const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc');
   
-  // Handle select all checkbox
+  // Selected orders for bulk actions
+  const [selectedOrders, setSelectedOrders] = useState<number[]>([]);
+  const [allSelected, setAllSelected] = useState(false);
+
+  // Fetch orders from API
+  const fetchOrders = async (page = 1, status = '', search = '', sort = 'createdAt', order = 'desc') => {
+    setLoading(true);
+    setError(null);
+    
+    try {
+      let url = `/api/admin/orders?page=${page}&limit=10&sortBy=${sort}&sortOrder=${order}`;
+      
+      if (status && status !== 'all') {
+        url += `&status=${status}`;
+      }
+      
+      if (search) {
+        url += `&search=${encodeURIComponent(search)}`;
+      }
+      
+      const response = await axios.get(url);
+      
+      setOrders(response.data.orders);
+      setPaginationInfo(response.data.pagination);
+      setStatusCounts(response.data.statusCounts);
+    } catch (error) {
+      console.error('Error fetching orders:', error);
+      setError('Failed to load orders. Please try again.');
+      toast.error('Failed to load orders. Please try again.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Initial load
+  useEffect(() => {
+    fetchOrders();
+  }, []);
+
+  // Refetch when filters or pagination change
+  useEffect(() => {
+    fetchOrders(currentPage, activeTab !== 'all' ? activeTab : '', searchQuery, sortBy, sortOrder);
+  }, [currentPage, activeTab, sortBy, sortOrder]);
+
+  // Handle search
+  const handleSearch = () => {
+    setCurrentPage(1);
+    fetchOrders(1, activeTab !== 'all' ? activeTab : '', searchQuery, sortBy, sortOrder);
+  };
+
+  // Handle search on enter key
+  const handleSearchKeyPress = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === 'Enter') {
+      handleSearch();
+    }
+  };
+
+  // Handle tab change
+  const handleTabChange = (value: string) => {
+    setActiveTab(value);
+    setCurrentPage(1);
+    setSelectedOrders([]);
+    setAllSelected(false);
+  };
+
+  // Handle sort change
+  const handleSortChange = (field: string) => {
+    if (sortBy === field) {
+      setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc');
+    } else {
+      setSortBy(field);
+      setSortOrder('desc');
+    }
+  };
+
+  // Handle select all
   const handleSelectAll = () => {
     if (allSelected) {
       setSelectedOrders([]);
     } else {
-      setSelectedOrders(filteredOrders.map(order => order.id));
+      setSelectedOrders(orders.map(order => order.id));
     }
     setAllSelected(!allSelected);
   };
   
-  // Handle individual checkbox
-  const handleSelectOrder = (orderId: string) => {
-    if (selectedOrders.includes(orderId)) {
-      setSelectedOrders(selectedOrders.filter(id => id !== orderId));
-      setAllSelected(false);
+  // Handle single select
+  const handleSelectOrder = (orderId: number) => {
+    setSelectedOrders(prev => {
+      if (prev.includes(orderId)) {
+        return prev.filter(id => id !== orderId);
     } else {
-      setSelectedOrders([...selectedOrders, orderId]);
-      if (selectedOrders.length + 1 === filteredOrders.length) {
-        setAllSelected(true);
+        return [...prev, orderId];
       }
+    });
+  };
+
+  // Handle order status update
+  const updateOrderStatus = async (orderId: number, status: string) => {
+    try {
+      await axios.put(`/api/admin/orders/${orderId}/status`, { status });
+      
+      // Refresh the orders list
+      fetchOrders(currentPage, activeTab !== 'all' ? activeTab : '', searchQuery, sortBy, sortOrder);
+      toast.success(`Order status updated successfully`);
+    } catch (error) {
+      console.error('Error updating order status:', error);
+      toast.error('Failed to update order status');
     }
   };
   
-  // Clear all filters
-  const clearFilters = () => {
-    setSearchQuery('');
-    setSelectedStatus('');
-    setSelectedPaymentStatus('');
-    setSelectedPaymentMethod('');
-    setSelectedDateFrom(undefined);
-    setSelectedDateTo(undefined);
+  // Get total for all statuses
+  const getTotalOrderCount = () => {
+    return Object.values(statusCounts).reduce((sum, count) => sum + count, 0);
   };
   
   return (
     <AdminLayout>
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-6">
-        <div>
-          <h1 className="text-2xl font-bold">{t('admin.orders')}</h1>
-          <p className="text-gray-500 mt-1">{t('admin.ordersDescription')}</p>
-        </div>
-        <div className="flex flex-wrap gap-2">
-          <Button variant="outline" size="sm" className="h-9">
-            <RefreshCw size={14} className="mr-2" />
-            {t('admin.refresh')}
-          </Button>
-          <Button variant="outline" size="sm" className="h-9">
-            <Download size={14} className="mr-2" />
-            {t('admin.exportOrders')}
-          </Button>
-          <Button variant="outline" size="sm" className="h-9">
-            <Printer size={14} className="mr-2" />
-            {t('admin.print')}
+      <div className="flex flex-col gap-5">
+        <div className="flex justify-between items-center">
+          <h1 className="text-2xl font-bold">Quản lý đơn hàng</h1>
+          
+          <div className="flex items-center gap-2">
+            <Button 
+              variant="outline" 
+              size="sm"
+              onClick={() => fetchOrders(currentPage, activeTab !== 'all' ? activeTab : '', searchQuery, sortBy, sortOrder)}
+            >
+              <RefreshCw className="h-4 w-4 mr-2" />
+              Refresh
           </Button>
         </div>
       </div>
       
-      <Tabs defaultValue="all" value={activeTab} onValueChange={setActiveTab} className="mb-6">
-        <TabsList className="grid grid-cols-6">
-          <TabsTrigger value="all">All Orders</TabsTrigger>
-          <TabsTrigger value="pending">Pending</TabsTrigger>
-          <TabsTrigger value="processing">Processing</TabsTrigger>
-          <TabsTrigger value="shipping">Shipping</TabsTrigger>
-          <TabsTrigger value="delivered">Delivered</TabsTrigger>
-          <TabsTrigger value="cancelled">Cancelled</TabsTrigger>
-        </TabsList>
-      </Tabs>
-      
-      <Card>
-        <CardHeader>
-          <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-            <div className="flex-1">
-              <div className="relative">
+        {/* Search and filters */}
+        <div className="grid grid-cols-1 md:grid-cols-12 gap-4">
+          <div className="md:col-span-6 flex items-center">
+            <div className="relative w-full">
                 <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-gray-500" />
                 <Input
                   type="search"
-                  placeholder={t('admin.searchOrders')}
-                  className="w-full pl-8"
+                placeholder="Tìm theo mã đơn hàng, tên khách hàng..."
+                className="w-full pl-9"
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
+                onKeyPress={handleSearchKeyPress}
                 />
-              </div>
             </div>
-            <div className="flex gap-2">
-              <Button 
-                variant="outline" 
-                onClick={() => setShowFilters(!showFilters)}
-              >
-                <Filter size={16} className="mr-2" />
-                {t('admin.filters')}
+            <Button variant="default" className="ml-2" onClick={handleSearch}>
+              Tìm
               </Button>
-            </div>
           </div>
           
-          {showFilters && (
-            <div className="mt-4 grid grid-cols-1 md:grid-cols-5 gap-4">
-              <div>
-                <Select value={selectedStatus} onValueChange={setSelectedStatus}>
-                  <SelectTrigger>
-                    <SelectValue placeholder={t('admin.orderStatus')} />
+          <div className="md:col-span-6 flex justify-end items-center gap-2">
+            <Select value={sortBy} onValueChange={(value) => {
+              setSortBy(value);
+              setCurrentPage(1);
+            }}>
+              <SelectTrigger className="w-[180px]">
+                <SelectValue placeholder="Sắp xếp theo" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="">All statuses</SelectItem>
-                    <SelectItem value="pending">Pending</SelectItem>
-                    <SelectItem value="processing">Processing</SelectItem>
-                    <SelectItem value="shipping">Shipping</SelectItem>
-                    <SelectItem value="delivered">Delivered</SelectItem>
-                    <SelectItem value="cancelled">Cancelled</SelectItem>
+                <SelectItem value="createdAt">Ngày tạo</SelectItem>
+                <SelectItem value="totalAmount">Tổng tiền</SelectItem>
+                <SelectItem value="id">Mã đơn hàng</SelectItem>
                   </SelectContent>
                 </Select>
-              </div>
               
-              <div>
-                <Select value={selectedPaymentStatus} onValueChange={setSelectedPaymentStatus}>
-                  <SelectTrigger>
-                    <SelectValue placeholder={t('admin.paymentStatus')} />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="">All payment statuses</SelectItem>
-                    <SelectItem value="paid">Paid</SelectItem>
-                    <SelectItem value="pending">Pending</SelectItem>
-                    <SelectItem value="refunded">Refunded</SelectItem>
-                    <SelectItem value="failed">Failed</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-              
-              <div>
-                <Select value={selectedPaymentMethod} onValueChange={setSelectedPaymentMethod}>
-                  <SelectTrigger>
-                    <SelectValue placeholder={t('admin.paymentMethod')} />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="">All payment methods</SelectItem>
-                    <SelectItem value="cod">COD</SelectItem>
-                    <SelectItem value="bank-transfer">Bank Transfer</SelectItem>
-                    <SelectItem value="momo">MoMo</SelectItem>
-                    <SelectItem value="vnpay">VNPay</SelectItem>
-                    <SelectItem value="credit-card">Credit Card</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-              
-              <div>
-                <Popover>
-                  <PopoverTrigger asChild>
                     <Button
                       variant="outline"
-                      className="w-full justify-start text-left font-normal"
+              className="px-3"
+              onClick={() => setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc')}
                     >
-                      <Calendar className="mr-2 h-4 w-4" />
-                      {selectedDateFrom ? format(selectedDateFrom, 'dd/MM/yyyy') : 'From date'}
+              {sortOrder === 'asc' ? 'Tăng dần' : 'Giảm dần'}
                     </Button>
-                  </PopoverTrigger>
-                  <PopoverContent className="w-auto p-0">
-                    <CalendarComponent
-                      mode="single"
-                      selected={selectedDateFrom}
-                      onSelect={setSelectedDateFrom}
-                      initialFocus
-                    />
-                  </PopoverContent>
-                </Popover>
+          </div>
               </div>
+
+        {/* Order Status Tabs */}
+        <Card>
+          <CardContent className="p-0">
+            <Tabs 
+              value={activeTab} 
+              onValueChange={handleTabChange}
+              className="w-full"
+            >
+              <TabsList className="w-full justify-start border-b rounded-none p-0 h-auto">
+                <TabsTrigger 
+                  value="all" 
+                  className="rounded-none data-[state=active]:border-b-2 data-[state=active]:border-primary py-4 px-6"
+                >
+                  Tất cả ({getTotalOrderCount()})
+                </TabsTrigger>
+                <TabsTrigger 
+                  value="pending" 
+                  className="rounded-none data-[state=active]:border-b-2 data-[state=active]:border-primary py-4 px-6"
+                >
+                  Chờ xử lý ({statusCounts.pending || 0})
+                </TabsTrigger>
+                <TabsTrigger 
+                  value="processing" 
+                  className="rounded-none data-[state=active]:border-b-2 data-[state=active]:border-primary py-4 px-6"
+                >
+                  Đang xử lý ({statusCounts.processing || 0})
+                </TabsTrigger>
+                <TabsTrigger 
+                  value="shipping" 
+                  className="rounded-none data-[state=active]:border-b-2 data-[state=active]:border-primary py-4 px-6"
+                >
+                  Đang giao ({statusCounts.shipping || 0})
+                </TabsTrigger>
+                <TabsTrigger 
+                  value="delivered" 
+                  className="rounded-none data-[state=active]:border-b-2 data-[state=active]:border-primary py-4 px-6"
+                >
+                  Đã giao ({statusCounts.delivered || 0})
+                </TabsTrigger>
+                <TabsTrigger 
+                  value="cancelled" 
+                  className="rounded-none data-[state=active]:border-b-2 data-[state=active]:border-primary py-4 px-6"
+                >
+                  Đã hủy ({statusCounts.cancelled || 0})
+                </TabsTrigger>
+              </TabsList>
               
-              <div>
-                <Popover>
-                  <PopoverTrigger asChild>
-                    <Button
-                      variant="outline"
-                      className="w-full justify-start text-left font-normal"
-                    >
-                      <Calendar className="mr-2 h-4 w-4" />
-                      {selectedDateTo ? format(selectedDateTo, 'dd/MM/yyyy') : 'To date'}
+              <TabsContent value={activeTab} className="p-0 mt-0">
+                {loading ? (
+                  <div className="flex justify-center items-center py-12">
+                    <Spinner size="lg" />
+                  </div>
+                ) : error ? (
+                  <div className="flex justify-center items-center py-12">
+                    <p className="text-red-500">{error}</p>
+                    <Button variant="outline" className="ml-4" onClick={() => fetchOrders()}>
+                      Thử lại
                     </Button>
-                  </PopoverTrigger>
-                  <PopoverContent className="w-auto p-0">
-                    <CalendarComponent
-                      mode="single"
-                      selected={selectedDateTo}
-                      onSelect={setSelectedDateTo}
-                      initialFocus
-                    />
-                  </PopoverContent>
-                </Popover>
-              </div>
-              
-              <div className="md:col-span-5 flex justify-end">
-                <Button variant="outline" onClick={clearFilters}>
-                  {t('admin.clearFilters')}
-                </Button>
-              </div>
-            </div>
-          )}
-        </CardHeader>
-        <CardContent>
+                  </div>
+                ) : orders.length === 0 ? (
+                  <EmptyState
+                    title="Không tìm thấy đơn hàng nào"
+                    description="Không có đơn hàng nào phù hợp với tiêu chí tìm kiếm của bạn."
+                    icon={<FileText className="h-12 w-12 text-gray-400" />}
+                  />
+                ) : (
+                  <>
+                    {/* Orders table */}
           <div className="overflow-x-auto">
-            <table className="w-full text-sm">
+                      <table className="w-full">
               <thead>
                 <tr className="border-b">
-                  <th className="py-3 px-2 text-left">
+                            <th className="py-3 px-4 text-left font-medium text-sm">
                     <Checkbox 
-                      checked={allSelected && filteredOrders.length > 0}
+                                checked={allSelected}
                       onCheckedChange={handleSelectAll}
-                      disabled={filteredOrders.length === 0}
+                                aria-label="Select all"
                     />
                   </th>
-                  <th className="py-3 px-2 text-left font-medium">{t('admin.orderId')}</th>
-                  <th className="py-3 px-2 text-left font-medium">{t('admin.customer')}</th>
-                  <th className="py-3 px-2 text-left font-medium">{t('admin.date')}</th>
-                  <th className="py-3 px-2 text-left font-medium">{t('admin.status')}</th>
-                  <th className="py-3 px-2 text-left font-medium">{t('admin.payment')}</th>
-                  <th className="py-3 px-2 text-right font-medium">{t('admin.total')}</th>
-                  <th className="py-3 px-2 text-right font-medium">{t('admin.actions')}</th>
+                            <th className="py-3 px-4 text-left font-medium text-sm">Mã đơn</th>
+                            <th className="py-3 px-4 text-left font-medium text-sm">Khách hàng</th>
+                            <th className="py-3 px-4 text-left font-medium text-sm">Ngày tạo</th>
+                            <th className="py-3 px-4 text-left font-medium text-sm">Trạng thái</th>
+                            <th className="py-3 px-4 text-left font-medium text-sm">Thanh toán</th>
+                            <th className="py-3 px-4 text-left font-medium text-sm">Tổng tiền</th>
+                            <th className="py-3 px-4 text-center font-medium text-sm">Thao tác</th>
                 </tr>
               </thead>
               <tbody>
-                {filteredOrders.length === 0 ? (
-                  <tr>
-                    <td colSpan={8} className="py-6 text-center text-gray-500">
-                      {t('admin.noOrdersFound')}
-                    </td>
-                  </tr>
-                ) : (
-                  filteredOrders.map((order) => (
+                          {orders.map((order) => (
                     <tr key={order.id} className="border-b hover:bg-gray-50">
-                      <td className="py-4 px-2">
+                              <td className="py-3 px-4">
                         <Checkbox 
                           checked={selectedOrders.includes(order.id)}
                           onCheckedChange={() => handleSelectOrder(order.id)}
+                                  aria-label={`Select order ${order.id}`}
                         />
                       </td>
-                      <td className="py-4 px-2">
-                        <Link href={`/admin/orders/${order.id}`} className="text-primary hover:underline font-medium">
-                          #{order.id}
-                        </Link>
-                      </td>
-                      <td className="py-4 px-2">
-                        <div>
-                          <p className="font-medium">{order.customer.name}</p>
-                          <p className="text-xs text-gray-500">{order.customer.email}</p>
-                          <p className="text-xs text-gray-500">{order.customer.phone}</p>
+                              <td className="py-3 px-4 font-medium">#{order.id}</td>
+                              <td className="py-3 px-4">
+                                <div className="flex flex-col">
+                                  <span className="font-medium">{order.shippingName}</span>
+                                  <span className="text-sm text-gray-500">{order.shippingPhone}</span>
                         </div>
                       </td>
-                      <td className="py-4 px-2">
-                        <div>
-                          <p>{format(order.date, 'dd/MM/yyyy')}</p>
-                          <p className="text-xs text-gray-500">{format(order.date, 'HH:mm')}</p>
-                        </div>
+                              <td className="py-3 px-4 text-gray-600">
+                                {new Date(order.createdAt).toLocaleDateString('vi-VN')}
                       </td>
-                      <td className="py-4 px-2">
+                              <td className="py-3 px-4">
                         <OrderStatusBadge status={order.status} />
                       </td>
-                      <td className="py-4 px-2">
+                              <td className="py-3 px-4">
                         <div className="flex flex-col gap-1">
                           <PaymentMethodBadge method={order.paymentMethod} />
                           <PaymentStatusBadge status={order.paymentStatus} />
                         </div>
                       </td>
-                      <td className="py-4 px-2 text-right font-medium">
-                        <div>
-                          <p>{formatPrice(order.total)}</p>
-                          <p className="text-xs text-gray-500">{order.items} items</p>
-                        </div>
+                              <td className="py-3 px-4 font-medium">
+                                {formatPrice(order.totalAmount)}
                       </td>
-                      <td className="py-4 px-2 text-right">
+                              <td className="py-3 px-4">
+                                <div className="flex justify-center items-center gap-2">
+                                  <Link href={`/admin/orders/${order.id}`}>
+                                    <Button variant="ghost" size="icon" title="Xem chi tiết">
+                                      <Eye className="h-4 w-4" />
+                                    </Button>
+                                  </Link>
                         <DropdownMenu>
                           <DropdownMenuTrigger asChild>
-                            <Button variant="ghost" size="icon" className="h-8 w-8">
-                              <MoreHorizontal size={16} />
+                                      <Button variant="ghost" size="icon" title="Tùy chọn">
+                                        <MoreHorizontal className="h-4 w-4" />
                             </Button>
                           </DropdownMenuTrigger>
-                          <DropdownMenuContent align="end">
-                            <DropdownMenuLabel>{t('admin.actions')}</DropdownMenuLabel>
+                                    <DropdownMenuContent align="end" className="w-56">
+                                      <DropdownMenuLabel>Thao tác</DropdownMenuLabel>
                             <DropdownMenuSeparator />
                             <DropdownMenuGroup>
-                              <DropdownMenuItem asChild>
-                                <Link href={`/admin/orders/${order.id}`} className="cursor-pointer">
-                                  <Eye size={14} className="mr-2" />
-                                  {t('admin.viewOrder')}
+                                        <Link href={`/admin/orders/${order.id}`}>
+                                          <DropdownMenuItem>
+                                            <Eye className="h-4 w-4 mr-2" />
+                                            Xem chi tiết
+                                          </DropdownMenuItem>
                                 </Link>
+                                        <DropdownMenuSeparator />
+                                        <DropdownMenuLabel>Cập nhật trạng thái</DropdownMenuLabel>
+                                        {order.status !== 'pending' && (
+                                          <DropdownMenuItem onClick={() => updateOrderStatus(order.id, 'pending')}>
+                                            Chờ xử lý
+                                          </DropdownMenuItem>
+                                        )}
+                                        {order.status !== 'processing' && (
+                                          <DropdownMenuItem onClick={() => updateOrderStatus(order.id, 'processing')}>
+                                            Đang xử lý
+                                          </DropdownMenuItem>
+                                        )}
+                                        {order.status !== 'shipping' && (
+                                          <DropdownMenuItem onClick={() => updateOrderStatus(order.id, 'shipping')}>
+                                            Đang giao
                               </DropdownMenuItem>
-                              <DropdownMenuItem className="cursor-pointer">
-                                <FileText size={14} className="mr-2" />
-                                {t('admin.invoice')}
+                                        )}
+                                        {order.status !== 'delivered' && (
+                                          <DropdownMenuItem onClick={() => updateOrderStatus(order.id, 'delivered')}>
+                                            Đã giao
                               </DropdownMenuItem>
-                              <DropdownMenuItem className="cursor-pointer">
-                                <Printer size={14} className="mr-2" />
-                                {t('admin.printOrder')}
+                                        )}
+                                        {order.status !== 'cancelled' && (
+                                          <DropdownMenuItem onClick={() => updateOrderStatus(order.id, 'cancelled')}>
+                                            Hủy đơn hàng
                               </DropdownMenuItem>
+                                        )}
                             </DropdownMenuGroup>
                           </DropdownMenuContent>
                         </DropdownMenu>
+                                </div>
                       </td>
                     </tr>
-                  ))
-                )}
+                          ))}
               </tbody>
             </table>
           </div>
           
           {/* Pagination */}
-          {filteredOrders.length > 0 && (
-            <div className="flex items-center justify-between mt-4">
-              <p className="text-sm text-gray-500">
-                {t('admin.showing')} 1-{filteredOrders.length} {t('admin.of')} {filteredOrders.length} {t('admin.orders')}
-              </p>
-              <div className="flex gap-1">
-                <Button variant="outline" size="sm" disabled>
-                  {t('admin.previous')}
+                    <div className="flex items-center justify-between p-4 border-t">
+                      <div className="text-sm text-gray-500">
+                        Hiển thị {orders.length} trong tổng số {paginationInfo.totalItems} đơn hàng
+                      </div>
+                      <div className="flex items-center space-x-2">
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => setCurrentPage(prevPage => Math.max(prevPage - 1, 1))}
+                          disabled={currentPage === 1}
+                        >
+                          <ChevronLeft className="h-4 w-4" />
                 </Button>
-                <Button variant="outline" size="sm" disabled>
-                  {t('admin.next')}
+                        <span className="text-sm">
+                          Trang {currentPage} / {paginationInfo.totalPages}
+                        </span>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => setCurrentPage(prevPage => Math.min(prevPage + 1, paginationInfo.totalPages))}
+                          disabled={currentPage === paginationInfo.totalPages}
+                        >
+                          <ChevronRight className="h-4 w-4" />
                 </Button>
               </div>
             </div>
+                  </>
           )}
+              </TabsContent>
+            </Tabs>
         </CardContent>
       </Card>
+      </div>
     </AdminLayout>
   );
 };

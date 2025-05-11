@@ -1,165 +1,149 @@
-import { useState } from "react";
+import React from "react";
 import { Link } from "wouter";
-import { useLanguage } from "@/hooks/useLanguage";
-import { useCart } from "@/hooks/useCart";
-import { formatPrice } from "@/lib/i18n";
-import { Product } from "@shared/schema";
-import { Button } from "@/components/ui/button";
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
-} from "@/components/ui/tooltip";
-import { useToast } from "@/hooks/use-toast";
+import { useTranslation } from "react-i18next";
+import { ShoppingCart, Star, Heart } from "lucide-react";
+import { Button } from "../ui/button";
+import { Badge } from "../ui/badge";
+
+interface Product {
+  id: number;
+  name: string;
+  nameEn: string;
+  nameZh: string;
+  slug: string;
+  price: number;
+  originalPrice: number | null;
+  discountPercentage: number | null;
+  imageUrl: string;
+  rating: number;
+  reviewCount: number;
+  freeShipping?: boolean;
+  isHotDeal?: boolean;
+}
 
 interface ProductCardProps {
   product: Product;
+  onAddToCart: () => void;
+  className?: string;
 }
 
-const ProductCard = ({ product }: ProductCardProps) => {
-  const { language, t } = useLanguage();
-  const { addToCart } = useCart();
-  const { toast } = useToast();
-  const [isAddingToCart, setIsAddingToCart] = useState(false);
+export const ProductCard: React.FC<ProductCardProps> = ({
+  product,
+  onAddToCart,
+  className,
+}) => {
+  const { t, i18n } = useTranslation();
+  const language = i18n.language;
 
-  // Get correct name based on language
-  const productName = language === 'en' ? product.nameEn : 
-                      language === 'zh' ? product.nameZh : 
-                      product.name;
-
-  // Quick add to cart without going to product detail
-  const handleQuickAddToCart = (e: React.MouseEvent) => {
-    e.preventDefault();
-    e.stopPropagation();
-    setIsAddingToCart(true);
-    
-    addToCart(product, 1)
-      .then(() => {
-        toast({
-          title: t("added-to-cart"),
-          description: productName,
-        });
-      })
-      .catch(error => {
-        toast({
-          title: t("error"),
-          description: error.message,
-          variant: "destructive"
-        });
-      })
-      .finally(() => {
-        setIsAddingToCart(false);
-      });
+  // Format price according to language
+  const formatPrice = (price: number) => {
+    if (language === "en") {
+      return `$${price.toFixed(2)}`;
+    } else if (language === "zh") {
+      return `¥${(price * 7).toFixed(2)}`;
+    } else {
+      return `${price.toLocaleString("vi-VN")}₫`;
+    }
   };
 
+  // Get localized product name
+  const displayName =
+    language === "en"
+      ? product.nameEn
+      : language === "zh"
+      ? product.nameZh
+      : product.name;
+
   return (
-    <div className="bg-white rounded-lg hover:shadow-md transition group">
+    <div
+      className={`group bg-white border rounded-lg hover:shadow-md transition ${className}`}
+    >
       <div className="relative">
-        <Link href={`/product/${product.slug}`}>
-          <div className="cursor-pointer">
-            <img 
-              src={product.imageUrl} 
-              alt={productName} 
-              className="w-full h-48 object-contain p-4" 
-            />
-          </div>
+        <Link to={`/product/${product.slug}`} className="block">
+          <img
+            src={product.imageUrl}
+            alt={displayName}
+            className="w-full h-40 object-contain p-2 rounded-t-lg"
+          />
         </Link>
-        <button 
-          className="absolute top-2 right-2 text-gray-500 hover:text-secondary transition-colors"
-          aria-label="Add to wishlist"
+        {(product.discountPercentage || product.isHotDeal) && (
+          <Badge
+            variant="destructive"
+            className="absolute top-2 left-2 px-2 py-1 text-xs"
+          >
+            {product.discountPercentage
+              ? `-${product.discountPercentage}%`
+              : t("hot-deal")}
+          </Badge>
+        )}
+        <Button
+          variant="ghost"
+          size="icon"
+          className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity h-7 w-7 bg-white/80 hover:bg-white"
+          title={t("wishlist")}
         >
-          <i className="far fa-heart"></i>
-        </button>
-        
-        {/* Product badges */}
-        <div className="absolute bottom-2 left-2 flex flex-col gap-1">
-          {product.isHotDeal && (
-            <span className="bg-secondary text-white text-xs px-2 py-1 rounded-full">
-              {t("hot-deal")}
-            </span>
-          )}
-          {product.isBestSeller && (
-            <span className="bg-secondary text-white text-xs px-2 py-1 rounded-full">
-              {t("best-seller")}
-            </span>
-          )}
-          {product.isNewArrival && (
-            <span className="bg-primary text-white text-xs px-2 py-1 rounded-full">
-              {t("new-arrival")}
-            </span>
-          )}
-        </div>
-        
-        {/* Quick add to cart - appears on hover */}
-        <div className="absolute inset-0 bg-black/5 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
-          <TooltipProvider>
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <Button 
-                  variant="secondary"
-                  size="sm"
-                  className="translate-y-4 group-hover:translate-y-0 transition-transform"
-                  onClick={handleQuickAddToCart}
-                  disabled={isAddingToCart}
-                >
-                  {isAddingToCart ? (
-                    <i className="fas fa-spinner fa-spin mr-2"></i>
-                  ) : (
-                    <i className="fas fa-cart-plus mr-2"></i>
-                  )}
-                  {t("add-to-cart")}
-                </Button>
-              </TooltipTrigger>
-              <TooltipContent>
-                <p>{t("add-to-cart")}</p>
-              </TooltipContent>
-            </Tooltip>
-          </TooltipProvider>
-        </div>
+          <Heart className="h-4 w-4" />
+        </Button>
       </div>
-      <div className="p-4">
-        <Link href={`/product/${product.slug}`}>
-          <div className="cursor-pointer">
-            <h3 className="text-sm font-medium line-clamp-2 hover:text-secondary">
-              {productName}
-            </h3>
-          </div>
+
+      <div className="p-3">
+        <Link to={`/product/${product.slug}`} className="block">
+          <h3 className="text-sm font-medium line-clamp-2 h-10">
+            {displayName}
+          </h3>
         </Link>
-        <div className="flex items-center mt-2">
+
+        <div className="flex items-center mt-1">
           <span className="text-accent font-semibold">
-            {formatPrice(product.price, language)}
+            {formatPrice(product.price)}
           </span>
           {product.originalPrice && (
-            <>
-              <span className="text-gray-500 text-xs line-through ml-2">
-                {formatPrice(product.originalPrice, language)}
-              </span>
-              <span className="text-accent text-xs ml-auto">
-                -{product.discountPercentage}%
-              </span>
-            </>
+            <span className="text-gray-500 text-xs line-through ml-2">
+              {formatPrice(product.originalPrice)}
+            </span>
           )}
         </div>
-        <div className="flex items-center mt-2 text-xs text-gray-500">
+
+        <div className="flex items-center mt-1 text-xs text-gray-500">
           <div className="flex">
-            {[...Array(Math.floor(product.rating))].map((_, i) => (
-              <i key={i} className="fas fa-star text-yellow-400"></i>
-            ))}
-            {product.rating % 1 >= 0.5 && (
-              <i className="fas fa-star-half-alt text-yellow-400"></i>
-            )}
-            {[...Array(5 - Math.ceil(product.rating))].map((_, i) => (
-              <i key={i} className="fas fa-star text-gray-300"></i>
-            ))}
+            {Array(5)
+              .fill(0)
+              .map((_, i) => (
+                <Star
+                  key={i}
+                  className={`h-3 w-3 ${
+                    i < Math.floor(product.rating)
+                      ? "text-yellow-400 fill-yellow-400"
+                      : "text-gray-300"
+                  }`}
+                />
+              ))}
           </div>
-          <span className="ml-1">{product.rating} ({product.reviewCount})</span>
+          <span className="ml-1">
+            {product.rating.toFixed(1)} ({product.reviewCount})
+          </span>
         </div>
+
         {product.freeShipping && (
-          <div className="mt-2 text-xs">
-            <span className="text-primary">{t("free-shipping")}</span>
+          <div className="mt-1 text-xs text-primary">
+            {t("free-shipping")}
           </div>
         )}
+
+        <div className="mt-3 flex justify-end">
+          <Button
+            variant="default"
+            size="sm"
+            className="w-full"
+            onClick={(e) => {
+              e.preventDefault();
+              onAddToCart();
+            }}
+          >
+            <ShoppingCart className="h-3.5 w-3.5 mr-1" />
+            {t("add-to-cart")}
+          </Button>
+        </div>
       </div>
     </div>
   );

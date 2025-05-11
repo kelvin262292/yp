@@ -1,10 +1,23 @@
 import express, { type Request, Response, NextFunction } from "express";
 import { registerRoutes } from "./routes";
 import { setupVite, serveStatic, log } from "./vite";
+import { configureAuth } from "./auth-config";
 
 const app = express();
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
+
+// Thêm CORS middleware để cho phép kết nối từ client
+app.use((req, res, next) => {
+  res.header('Access-Control-Allow-Origin', '*');
+  res.header('Access-Control-Allow-Headers', 'Origin, X-Requested-With, Content-Type, Accept, Authorization');
+  res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
+  
+  if (req.method === 'OPTIONS') {
+    return res.sendStatus(200);
+  }
+  next();
+});
 
 app.use((req, res, next) => {
   const start = Date.now();
@@ -36,6 +49,9 @@ app.use((req, res, next) => {
   next();
 });
 
+// Cấu hình authentication
+configureAuth(app);
+
 (async () => {
   const server = await registerRoutes(app);
 
@@ -60,11 +76,14 @@ app.use((req, res, next) => {
   // this serves both the API and the client.
   // It is the only port that is not firewalled.
   const port = 5000;
-  server.listen({
+  const isWindows = process.platform === 'win32';
+  const serverConfig = {
     port,
-    host: "0.0.0.0",
-    reusePort: true,
-  }, () => {
+    host: "localhost",
+    ...(!isWindows && { reusePort: true })
+  };
+  
+  server.listen(serverConfig, () => {
     log(`serving on port ${port}`);
   });
 })();

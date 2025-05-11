@@ -5,7 +5,8 @@ import {
   products, type InsertProduct,
   brands, type InsertBrand,
   flashDeals, type InsertFlashDeal,
-  banners, type InsertBanner
+  banners, type InsertBanner,
+  reviews, type InsertReview
 } from '@shared/schema';
 
 async function main() {
@@ -309,6 +310,72 @@ async function main() {
     }).returning();
 
     console.log('Flash deals created.');
+
+    // Tạo dữ liệu người dùng mẫu nếu chưa có
+    const adminUser = await db.insert(users).values({
+      username: "admin",
+      password: "admin123", // Trong thực tế, mật khẩu cần được hash
+      fullName: "Admin User",
+      email: "admin@example.com",
+      phone: "0123456789",
+      address: "123 Admin St",
+      role: "admin"
+    }).returning();
+
+    const regularUser = await db.insert(users).values({
+      username: "user",
+      password: "user123", // Trong thực tế, mật khẩu cần được hash
+      fullName: "Regular User",
+      email: "user@example.com",
+      phone: "0987654321",
+      address: "456 User St",
+      role: "user"
+    }).returning();
+
+    console.log('Users created.');
+
+    // Tạo review mẫu
+    await db.insert(reviews).values([
+      {
+        productId: smartphone[0].id,
+        userId: regularUser[0].id,
+        rating: 5,
+        title: "Sản phẩm tuyệt vời",
+        comment: "Điện thoại hoạt động rất tốt, pin trâu, camera đẹp. Rất hài lòng với sản phẩm.",
+        isVerifiedPurchase: true,
+        isApproved: true
+      },
+      {
+        productId: smartphone[0].id,
+        userId: adminUser[0].id,
+        rating: 4,
+        title: "Sản phẩm tốt",
+        comment: "Điện thoại đẹp, hiệu năng ổn. Nhưng pin hơi yếu.",
+        isVerifiedPurchase: true,
+        isApproved: true
+      },
+      {
+        productId: smartwatch[0].id,
+        userId: regularUser[0].id,
+        rating: 5,
+        title: "Đồng hồ thông minh tuyệt vời",
+        comment: "Đồng hồ rất đẹp và nhiều tính năng hữu ích. Rất phù hợp để theo dõi sức khỏe.",
+        isVerifiedPurchase: true,
+        isApproved: true
+      },
+      {
+        productId: earbuds[0].id,
+        userId: regularUser[0].id,
+        rating: 3,
+        title: "Tai nghe ổn",
+        comment: "Âm thanh tốt nhưng thời lượng pin hơi ngắn.",
+        isVerifiedPurchase: true,
+        isApproved: true
+      }
+    ]);
+
+    console.log('Reviews created.');
+
     console.log('Database initialization completed successfully!');
 
   } catch (error) {

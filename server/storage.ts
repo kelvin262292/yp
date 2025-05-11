@@ -6,7 +6,9 @@ import {
   cartItems, type CartItem, type InsertCartItem,
   brands, type Brand, type InsertBrand,
   flashDeals, type FlashDeal, type InsertFlashDeal,
-  banners, type Banner, type InsertBanner
+  banners, type Banner, type InsertBanner,
+  orders, type Order, type InsertOrder,
+  orderItems, type OrderItem, type InsertOrderItem
 } from "@shared/schema";
 
 export interface IStorage {
@@ -14,6 +16,7 @@ export interface IStorage {
   getUser(id: number): Promise<User | undefined>;
   getUserByUsername(username: string): Promise<User | undefined>;
   createUser(user: InsertUser): Promise<User>;
+  updateUser(id: number, userData: Partial<typeof users.$inferInsert>): Promise<User | undefined>;
   
   // Category operations
   getCategories(): Promise<Category[]>;
@@ -33,6 +36,7 @@ export interface IStorage {
   getProductBySlug(slug: string): Promise<Product | undefined>;
   searchProducts(query: string): Promise<Product[]>;
   createProduct(product: InsertProduct): Promise<Product>;
+  updateProductStock(id: number, quantity: number): Promise<boolean>;
   
   // Cart operations
   getCart(id: number): Promise<Cart | undefined>;
@@ -60,6 +64,22 @@ export interface IStorage {
   getBanners(options?: { isActive?: boolean }): Promise<Banner[]>;
   getBannerById(id: number): Promise<Banner | undefined>;
   createBanner(banner: InsertBanner): Promise<Banner>;
+
+  // Order operations
+  getOrders(options?: { 
+    userId?: number,
+    status?: string,
+    limit?: number,
+    offset?: number
+  }): Promise<Order[]>;
+  getOrderById(id: number): Promise<Order | undefined>;
+  getOrderItems(orderId: number): Promise<OrderItem[]>;
+  getOrderWithItems(id: number): Promise<(Order & { items: OrderItem[] }) | undefined>;
+  createOrder(order: InsertOrder): Promise<Order>;
+  addOrderItem(orderItem: InsertOrderItem): Promise<OrderItem>;
+  updateOrderStatus(id: number, status: string): Promise<Order | undefined>;
+  updatePaymentStatus(id: number, paymentStatus: string, paymentIntentId?: string): Promise<Order | undefined>;
+  getUserOrderCount(userId: number): Promise<number>;
 }
 
 export class MemStorage implements IStorage {
@@ -795,6 +815,57 @@ export class MemStorage implements IStorage {
     const banner: Banner = { ...insertBanner, id };
     this.banners.set(id, banner);
     return banner;
+  }
+
+  // Order methods
+  async getOrders(options?: { 
+    userId?: number,
+    status?: string,
+    limit?: number,
+    offset?: number
+  }): Promise<Order[]> {
+    // Implementation needed
+    throw new Error("Method not implemented");
+  }
+
+  async getOrderById(id: number): Promise<Order | undefined> {
+    // Implementation needed
+    throw new Error("Method not implemented");
+  }
+
+  async getOrderItems(orderId: number): Promise<OrderItem[]> {
+    // Implementation needed
+    throw new Error("Method not implemented");
+  }
+
+  async getOrderWithItems(id: number): Promise<(Order & { items: OrderItem[] }) | undefined> {
+    // Implementation needed
+    throw new Error("Method not implemented");
+  }
+
+  async createOrder(order: InsertOrder): Promise<Order> {
+    // Implementation needed
+    throw new Error("Method not implemented");
+  }
+
+  async addOrderItem(orderItem: InsertOrderItem): Promise<OrderItem> {
+    // Implementation needed
+    throw new Error("Method not implemented");
+  }
+
+  async updateOrderStatus(id: number, status: string): Promise<Order | undefined> {
+    // Implementation needed
+    throw new Error("Method not implemented");
+  }
+
+  async updatePaymentStatus(id: number, paymentStatus: string, paymentIntentId?: string): Promise<Order | undefined> {
+    // Implementation needed
+    throw new Error("Method not implemented");
+  }
+
+  async getUserOrderCount(userId: number): Promise<number> {
+    // Implementation needed
+    throw new Error("Method not implemented");
   }
 }
 
